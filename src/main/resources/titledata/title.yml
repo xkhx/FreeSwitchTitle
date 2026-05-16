@@ -1,0 +1,17 @@
+fly:
+  title: '&r[&b飞行员&r]'
+  material: STONE
+  lore:
+    - '&r恭喜你成为飞行员'
+    - '&r点击佩戴这个称号'
+    - '&r称号期限: 永久'
+  join-message: '&b飞行员 &f{0} &b加入了游戏'
+  permission:
+    - essentials.fly
+    - essentials.tp
+  particle:
+    - 火焰特效
+    - 爱心特效
+  attribute:
+    - '生命力: 10'
+    - '移速加成: 1'

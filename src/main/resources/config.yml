@@ -1,0 +1,26 @@
+# 数据库配置
+sql:
+  # 关闭则使用本地 SQLite 存储
+  enable: false
+  host: localhost
+  port: 3306
+  user: root
+  password: root
+  database: fst
+
+# 称号配置
+title:
+  # 称号文件存储路径，文件名固定为 title.yml，{0} 为插件数据目录
+  path: '{0}/titledata'
+  # 默认前缀，不显示可改为空字符串：''
+  prefix: '&2[公民]&r'
+
+# 是否启用称号商城入口（购买逻辑暂未实现）
+shop: true
+
+# 聊天显示
+chat:
+  # 是否由本插件接管聊天格式（如果使用其他聊天插件显示称号，请关闭）
+  show: true
+  # 可使用 %fst_title% 等 PlaceholderAPI 变量
+  format: '<%fst_title%{DISPLAY_NAME}> {MESSAGE}'

@@ -1,0 +1,52 @@
+# 称号列表 GUI
+
+gui:
+  # GUI 标题
+  title:
+    # 全部称号标题
+    all-title: "全部称号"
+    # 称号商店标题
+    shop-title: "称号商城"
+    # 我的称号标题，{0} 为玩家名
+    my-title: "{0} 的称号列表"
+
+  # 列表布局
+  map:
+    - "#########"
+    - "#@@@@@@@#"
+    - "L###M###N"
+
+  # 显示称号列表的位置
+  slotBy: '@'
+
+  # 边框
+  border:
+    type: BLACK_STAINED_GLASS_PANE
+    slot: '#'
+    name: "&8⬛"
+
+  # 个人信息
+  info:
+    type: PLAYER_HEAD
+    slot: 'M'
+    name: "&r我的信息"
+    lore:
+      - "&r正在使用: %fst_title_show%"
+
+  # 上一页
+  previous:
+    type: SPECTRAL_ARROW
+    # 如果已经是第一页
+    first-type: ARROW
+    slot: 'L'
+    name: "&f上一页"
+    first-name: "&7上一页"
+
+  # 下一页
+  next:
+    type: SPECTRAL_ARROW
+    # 如果已经是最后一页
+    last-type: ARROW
+    slot: 'N'
+    name: "&f下一页"
+    last-name: "&7下一页"

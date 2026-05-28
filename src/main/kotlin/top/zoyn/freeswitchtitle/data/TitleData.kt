@@ -10,12 +10,25 @@ data class TitleData(
     val material: XMaterial,
     val lore: List<String>,
     val joinMessage: String,
+    val shopEnable: Boolean,
+    val vaultPrice: Double,
+    val pointsPrice: Int,
+    val shopPermission: String,
+    val permissions: List<String>,
+    val equipCommands: List<String>,
+    val unequipCommands: List<String>,
+    val buyCommands: List<String>,
 ) {
-    val item: ItemStack by lazy {
-        buildItem(material) {
+    fun buildDisplayItem(extraLore: List<String> = emptyList()): ItemStack {
+        return buildItem(material) {
             name = title
             lore.addAll(this@TitleData.lore)
+            lore.addAll(extraLore)
             colored()
         }
+    }
+
+    val item: ItemStack by lazy {
+        buildDisplayItem()
     }
 }

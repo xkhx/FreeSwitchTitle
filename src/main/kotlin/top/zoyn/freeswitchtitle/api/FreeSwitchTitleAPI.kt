@@ -70,6 +70,16 @@ object FreeSwitchTitleAPI {
     }
 
     @JvmStatic
+    fun hasTitle(player: OfflinePlayer, uid: String): Boolean {
+        return TitleUtils.hasTitle(player.uniqueId, uid)
+    }
+
+    @JvmStatic
+    fun hasTitle(uuid: UUID, uid: String): Boolean {
+        return TitleUtils.hasTitle(uuid, uid)
+    }
+
+    @JvmStatic
     fun addTitle(player: OfflinePlayer, uid: String): Boolean {
         return TitleUtils.addTitle(player.uniqueId, uid)
     }

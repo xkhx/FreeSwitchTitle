@@ -47,11 +47,18 @@ taboolib {
 
 repositories {
     mavenCentral()
+    maven("https://repo.codemc.io/repository/maven-public/")
+    maven("https://repo.lucko.me/")
+    maven("https://jitpack.io")
 }
 
 dependencies {
     compileOnly("ink.ptms.core:v12004:12004:mapped")
     compileOnly("ink.ptms.core:v12004:12004:universal")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
+        isTransitive = false
+    }
+    compileOnly("net.luckperms:api:5.4")
     compileOnly(kotlin("stdlib"))
     compileOnly(fileTree("libs"))
 }

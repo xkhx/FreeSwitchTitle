@@ -11,8 +11,10 @@ import taboolib.module.chat.colored
 import taboolib.module.configuration.Configuration
 import taboolib.module.configuration.Type
 import taboolib.platform.util.bukkitPlugin
+import taboolib.platform.util.onlinePlayers
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
 import top.zoyn.freeswitchtitle.data.TitleData
+import top.zoyn.freeswitchtitle.hook.permission.PermissionManager
 import java.io.File
 import java.util.UUID
 
@@ -35,7 +37,21 @@ object TitleUtils {
             val material = ConfigUtils.getTitleMaterial(uid)
             val lore = ConfigUtils.getTitleLore(uid).colored()
             val joinMessage = ConfigUtils.getTitleJoinMessage(uid).colored()
-            titleMap[uid] = TitleData(uid, title, material, lore, joinMessage)
+            titleMap[uid] = TitleData(
+                uid = uid,
+                title = title,
+                material = material,
+                lore = lore,
+                joinMessage = joinMessage,
+                shopEnable = ConfigUtils.getTitleShopEnable(uid),
+                vaultPrice = ConfigUtils.getTitleVaultPrice(uid),
+                pointsPrice = ConfigUtils.getTitlePointsPrice(uid),
+                shopPermission = ConfigUtils.getTitleShopPermission(uid),
+                permissions = ConfigUtils.getTitlePermissions(uid),
+                equipCommands = ConfigUtils.getTitleEquipCommands(uid),
+                unequipCommands = ConfigUtils.getTitleUnequipCommands(uid),
+                buyCommands = ConfigUtils.getTitleBuyCommands(uid)
+            )
         }
         FreeSwitchTitle.sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.WHITE}${titleMap.size} ${ChatColor.RESET}个称号加载完成!")
     }
@@ -95,14 +111,39 @@ object TitleUtils {
     }
 
     fun using(uuid: UUID, uid: String): Boolean {
-        if (!titleMap.containsKey(uid)) return false
+        val title = titleMap[uid] ?: return false
         if (!getPlayerTitleUidList(uuid).contains(uid)) return false
+        val current = getUsing(uuid)
+        if (current == uid) return true
+        val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
+        if (player != null) {
+            current?.let { titleMap[it] }?.let { oldTitle ->
+                PermissionManager.revoke(player, oldTitle)
+                TitleEffectUtils.runUnequip(player, oldTitle)
+            }
+            if (!PermissionManager.grant(player, title)) {
+                return false
+            }
+            TitleEffectUtils.runEquip(player, title)
+        }
         uuid.getPlayerDataContainer()[USING_KEY] = uid
         return true
     }
 
     fun reset(uuid: UUID) {
+        val current = getUsing(uuid)
+        val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
+        if (player != null) {
+            current?.let { titleMap[it] }?.let { oldTitle ->
+                PermissionManager.revoke(player, oldTitle)
+                TitleEffectUtils.runUnequip(player, oldTitle)
+            }
+        }
         uuid.getPlayerDataContainer()[USING_KEY] = ""
+    }
+
+    fun hasTitle(uuid: UUID, uid: String): Boolean {
+        return getPlayerTitleUidList(uuid).contains(uid)
     }
 
     @Awake(LifeCycle.DISABLE)

@@ -3,6 +3,8 @@ package top.zoyn.freeswitchtitle.util
 import taboolib.common5.cchar
 import taboolib.library.xseries.XMaterial
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
+import top.zoyn.freeswitchtitle.hook.economy.CurrencyType
+import top.zoyn.freeswitchtitle.hook.permission.PermissionMode
 import top.zoyn.freeswitchtitle.util.TitleUtils.titleConfig
 import kotlin.jvm.optionals.getOrNull
 
@@ -11,8 +13,14 @@ import kotlin.jvm.optionals.getOrNull
  */
 object ConfigUtils {
 
-    val enableShop: Boolean
-        get() = FreeSwitchTitle.config.getBoolean("shop", false)
+    val shopEnable: Boolean
+        get() {
+            val raw = FreeSwitchTitle.config["shop"]
+            return if (raw is Boolean) raw else FreeSwitchTitle.config.getBoolean("shop.enable", false)
+        }
+
+    val shopCurrency: CurrencyType
+        get() = CurrencyType.match(FreeSwitchTitle.config.getString("shop.currency") ?: "VAULT")
 
     val enableChat: Boolean
         get() = FreeSwitchTitle.config.getBoolean("chat.show", false)
@@ -25,6 +33,21 @@ object ConfigUtils {
 
     val format: String
         get() = FreeSwitchTitle.config.getString("chat.format") ?: error("config.yml chat.format not found")
+
+    val permissionMode: PermissionMode
+        get() = PermissionMode.match(FreeSwitchTitle.config.getString("permission.mode") ?: "NONE")
+
+    val permissionSafeCheck: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("permission.safe-check", true)
+
+    val permissionRecordKey: String
+        get() = FreeSwitchTitle.config.getString("permission.record-key") ?: "fst_granted_permissions"
+
+    val groupManagerGiveCommand: String
+        get() = FreeSwitchTitle.config.getString("permission.group-manager.give") ?: "manuaddp {player} {permission}"
+
+    val groupManagerTakeCommand: String
+        get() = FreeSwitchTitle.config.getString("permission.group-manager.take") ?: "manudelp {player} {permission}"
 
     val title: String
         get() = FreeSwitchTitle.guiConfig.getString("gui.title.all-title") ?: error("gui.yml gui.title.all-title not found")
@@ -92,6 +115,30 @@ object ConfigUtils {
     val nextLastName: String
         get() = FreeSwitchTitle.guiConfig.getString("gui.next.last-name") ?: error("gui.yml gui.next.last-name not found")
 
+    val statusUsing: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.using") ?: "&a状态: 正在使用"
+
+    val statusOwned: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.owned") ?: "&e状态: 已拥有"
+
+    val statusNotOwned: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.not-owned") ?: "&7状态: 未拥有"
+
+    val statusNoPermission: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.no-permission") ?: "&c状态: 无权限购买"
+
+    val statusVaultPrice: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.vault-price") ?: "&6金币价格: {0}"
+
+    val statusPointsPrice: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.points-price") ?: "&b点券价格: {0}"
+
+    val statusClickBuy: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.click-buy") ?: "&a点击购买"
+
+    val statusClickEquip: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.click-equip") ?: "&a点击佩戴"
+
     fun getGuiMaterial(path: String): XMaterial {
         val type = FreeSwitchTitle.guiConfig.getString(path) ?: error("gui.yml $path not found")
         return getMaterial(type)
@@ -111,4 +158,20 @@ object ConfigUtils {
     fun getTitleLore(uid: String): List<String> = titleConfig.getStringList("$uid.lore")
 
     fun getTitleJoinMessage(uid: String): String = titleConfig.getString("$uid.join-message") ?: ""
+
+    fun getTitleShopEnable(uid: String): Boolean = titleConfig.getBoolean("$uid.shop.enable", false)
+
+    fun getTitleVaultPrice(uid: String): Double = titleConfig.getDouble("$uid.shop.vault-price", 0.0)
+
+    fun getTitlePointsPrice(uid: String): Int = titleConfig.getInt("$uid.shop.points-price", 0)
+
+    fun getTitleShopPermission(uid: String): String = titleConfig.getString("$uid.shop.permission") ?: ""
+
+    fun getTitlePermissions(uid: String): List<String> = titleConfig.getStringList("$uid.permission")
+
+    fun getTitleEquipCommands(uid: String): List<String> = titleConfig.getStringList("$uid.commands.equip")
+
+    fun getTitleUnequipCommands(uid: String): List<String> = titleConfig.getStringList("$uid.commands.unequip")
+
+    fun getTitleBuyCommands(uid: String): List<String> = titleConfig.getStringList("$uid.commands.buy")
 }

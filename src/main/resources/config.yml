@@ -15,8 +15,23 @@ title:
   # 默认前缀，不显示可改为空字符串：''
   prefix: '&2[公民]&r'
 
-# 是否启用称号商城入口（购买逻辑暂未实现）
-shop: true
+# 称号商城
+shop:
+  enable: true
+  # VAULT / PLAYER_POINTS / BOTH
+  currency: VAULT
+
+# 称号权限处理
+permission:
+  # LUCKPERMS / GROUP_MANAGER / NONE
+  mode: LUCKPERMS
+  # 授权前检查玩家是否已经拥有该权限，避免卸下称号时误删原有权限
+  safe-check: true
+  # 本插件实际授予权限的记录键
+  record-key: fst_granted_permissions
+  group-manager:
+    give: 'manuaddp {player} {permission}'
+    take: 'manudelp {player} {permission}'
 
 # 聊天显示
 chat:

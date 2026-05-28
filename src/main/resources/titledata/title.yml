@@ -1,17 +1,23 @@
 fly:
   title: '&r[&b飞行员&r]'
-  material: STONE
+  material: FEATHER
   lore:
     - '&r恭喜你成为飞行员'
     - '&r点击佩戴这个称号'
     - '&r称号期限: 永久'
   join-message: '&b飞行员 &f{0} &b加入了游戏'
+  shop:
+    enable: true
+    vault-price: 1000.0
+    points-price: 50
+    permission: ''
   permission:
     - essentials.fly
     - essentials.tp
-  particle:
-    - 火焰特效
-    - 爱心特效
-  attribute:
-    - '生命力: 10'
-    - '移速加成: 1'
+  commands:
+    equip:
+      - 'say {player} 佩戴了 {title}'
+    unequip:
+      - 'say {player} 卸下了 {title}'
+    buy:
+      - 'say {player} 购买了 {title}'

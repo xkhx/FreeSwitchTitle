@@ -43,7 +43,7 @@ object FreeSwitchTitleCommand {
     @CommandBody(permission = "freeswitchtitle.command.shop", permissionDefault = PermissionDefault.TRUE)
     val shop = subCommand {
         execute<Player> { sender, _, _ ->
-            if (!ConfigUtils.enableShop) {
+            if (!ConfigUtils.shopEnable) {
                 sender.sendLang("command-shop-disabled")
                 return@execute
             }

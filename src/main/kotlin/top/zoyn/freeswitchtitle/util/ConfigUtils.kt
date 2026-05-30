@@ -169,9 +169,14 @@ object ConfigUtils {
 
     fun getTitlePermissions(uid: String): List<String> = titleConfig.getStringList("$uid.permission")
 
-    fun getTitleEquipCommands(uid: String): List<String> = titleConfig.getStringList("$uid.commands.equip")
+    fun getTitleEquipActions(uid: String): List<String> = getTitleActions(uid, "equip")
 
-    fun getTitleUnequipCommands(uid: String): List<String> = titleConfig.getStringList("$uid.commands.unequip")
+    fun getTitleUnequipActions(uid: String): List<String> = getTitleActions(uid, "unequip")
 
-    fun getTitleBuyCommands(uid: String): List<String> = titleConfig.getStringList("$uid.commands.buy")
+    fun getTitleBuyActions(uid: String): List<String> = getTitleActions(uid, "buy")
+
+    private fun getTitleActions(uid: String, type: String): List<String> {
+        val actions = titleConfig.getStringList("$uid.actions.$type")
+        return actions.ifEmpty { titleConfig.getStringList("$uid.commands.$type") }
+    }
 }

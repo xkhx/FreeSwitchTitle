@@ -49,9 +49,9 @@ object TitleUtils {
                 pointsPrice = ConfigUtils.getTitlePointsPrice(uid),
                 shopPermission = ConfigUtils.getTitleShopPermission(uid),
                 permissions = ConfigUtils.getTitlePermissions(uid),
-                equipCommands = ConfigUtils.getTitleEquipCommands(uid),
-                unequipCommands = ConfigUtils.getTitleUnequipCommands(uid),
-                buyCommands = ConfigUtils.getTitleBuyCommands(uid)
+                equipActions = ConfigUtils.getTitleEquipActions(uid),
+                unequipActions = ConfigUtils.getTitleUnequipActions(uid),
+                buyActions = ConfigUtils.getTitleBuyActions(uid)
             )
         }
         FreeSwitchTitle.sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.WHITE}${titleMap.size} ${ChatColor.RESET}个称号加载完成!")

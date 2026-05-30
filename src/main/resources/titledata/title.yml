@@ -14,10 +14,13 @@ fly:
   permission:
     - essentials.fly
     - essentials.tp
-  commands:
+  actions:
     equip:
-      - 'say {player} 佩戴了 {title}'
+      - '[console] say {player} 佩戴了 {title}'
+      - '[message] &a你佩戴了 {title}'
     unequip:
-      - 'say {player} 卸下了 {title}'
+      - '[console] say {player} 卸下了 {title}'
+      - '[message] &c你卸下了 {title}'
     buy:
-      - 'say {player} 购买了 {title}'
+      - '[console] say {player} 购买了 {title}'
+      - '[message] &a你购买了 {title}'

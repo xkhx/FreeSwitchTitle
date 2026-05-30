@@ -15,9 +15,9 @@ data class TitleData(
     val pointsPrice: Int,
     val shopPermission: String,
     val permissions: List<String>,
-    val equipCommands: List<String>,
-    val unequipCommands: List<String>,
-    val buyCommands: List<String>,
+    val equipActions: List<String>,
+    val unequipActions: List<String>,
+    val buyActions: List<String>,
 ) {
     fun buildDisplayItem(extraLore: List<String> = emptyList()): ItemStack {
         return buildItem(material) {

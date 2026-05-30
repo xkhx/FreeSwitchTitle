@@ -32,7 +32,7 @@ object PermissionManager {
         return success
     }
 
-    fun revoke(player: Player, title: TitleData): Boolean {
+    fun revoke(player: Player, title: TitleData, retainedPermissions: Set<String> = emptySet()): Boolean {
         if (title.permissions.isEmpty()) return true
         val provider = provider() ?: return ConfigUtils.permissionMode == PermissionMode.NONE
         var success = true
@@ -40,7 +40,7 @@ object PermissionManager {
             PermissionGrantStore.getGrantedForTitle(player.uniqueId, title.uid)
         } else {
             title.permissions.toSet()
-        }
+        }.filter { it !in retainedPermissions }
         permissions.forEach { permission ->
             if (provider.removePermission(player, permission)) {
                 PermissionGrantStore.unmarkGranted(player.uniqueId, title.uid, permission)

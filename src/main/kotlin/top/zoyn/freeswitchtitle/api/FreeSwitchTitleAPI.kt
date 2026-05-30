@@ -60,13 +60,13 @@ object FreeSwitchTitleAPI {
     }
 
     @JvmStatic
-    fun resetPlayerTitle(player: OfflinePlayer) {
-        TitleUtils.reset(player.uniqueId)
+    fun resetPlayerTitle(player: OfflinePlayer): Boolean {
+        return TitleUtils.reset(player.uniqueId)
     }
 
     @JvmStatic
-    fun resetPlayerTitle(uuid: UUID) {
-        TitleUtils.reset(uuid)
+    fun resetPlayerTitle(uuid: UUID): Boolean {
+        return TitleUtils.reset(uuid)
     }
 
     @JvmStatic

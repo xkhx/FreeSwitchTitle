@@ -13,6 +13,7 @@ import taboolib.platform.util.sendLang
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
 import top.zoyn.freeswitchtitle.api.FreeSwitchTitleAPI
 import top.zoyn.freeswitchtitle.gui.type.GuiType
+import top.zoyn.freeswitchtitle.hook.economy.EconomyManager
 import top.zoyn.freeswitchtitle.util.ConfigUtils
 import top.zoyn.freeswitchtitle.util.addTitle
 import top.zoyn.freeswitchtitle.util.openTitleListMenu
@@ -54,8 +55,36 @@ object FreeSwitchTitleCommand {
     @CommandBody(permission = "freeswitchtitle.command.reset", permissionDefault = PermissionDefault.TRUE)
     val reset = subCommand {
         execute<Player> { sender, _, _ ->
-            sender.resetCurrentTitle()
-            sender.sendLang("reset-title-message")
+            if (sender.resetCurrentTitle()) {
+                sender.sendLang("reset-title-message")
+            } else {
+                sender.sendLang("reset-title-failed")
+            }
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.buy", permissionDefault = PermissionDefault.TRUE)
+    val buy = subCommand {
+        dynamic("uid") {
+            suggestionUncheck<Player> { _, _ ->
+                FreeSwitchTitleAPI.getTitleUidList()
+            }
+            execute<Player> { sender, context, _ ->
+                val uid = context["uid"]
+                val title = FreeSwitchTitleAPI.getTitle(uid)
+                val result = EconomyManager.purchase(sender, uid)
+                EconomyManager.sendResult(sender, result, title)
+            }
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.look", permissionDefault = PermissionDefault.TRUE)
+    val look = subCommand {
+        player("player") {
+            execute<Player> { sender, context, _ ->
+                val target = context.player("player")
+                sender.openTitleListMenu(GuiType.LOOK_PLAYER, target.uniqueId)
+            }
         }
     }
 
@@ -135,12 +164,57 @@ object FreeSwitchTitleCommand {
         }
     }
 
+    @CommandBody(permission = "freeswitchtitle.command.set", permissionDefault = PermissionDefault.OP)
+    val set = subCommand {
+        player("player") {
+            dynamic("uid") {
+                suggestionUncheck<CommandSender> { _, _ ->
+                    FreeSwitchTitleAPI.getTitleUidList()
+                }
+                execute<CommandSender> { sender, context, _ ->
+                    val player = context.player("player").cast<Player>()
+                    val uid = context["uid"]
+                    setTitle(sender, player, uid)
+                }
+            }
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.clear", permissionDefault = PermissionDefault.OP)
+    val clear = subCommand {
+        player("player") {
+            execute<CommandSender> { sender, context, _ ->
+                val player = context.player("player").cast<Player>()
+                if (player.resetCurrentTitle()) {
+                    sender.sendLang("clear-title-success")
+                } else {
+                    sender.sendLang("clear-title-failed")
+                }
+            }
+        }
+    }
+
     private fun addTitle(sender: CommandSender, uuid: UUID, uid: String) {
         val title = FreeSwitchTitleAPI.getTitle(uid)
         if (title != null && uuid.addTitle(uid)) {
             sender.sendLang("add-title-success", title.title)
         } else {
             sender.sendLang("add-title-failed")
+        }
+    }
+
+    private fun setTitle(sender: CommandSender, player: Player, uid: String) {
+        val title = FreeSwitchTitleAPI.getTitle(uid) ?: run {
+            sender.sendLang("set-title-failed")
+            return
+        }
+        if (!FreeSwitchTitleAPI.hasTitle(player, uid)) {
+            FreeSwitchTitleAPI.addTitle(player, uid)
+        }
+        if (FreeSwitchTitleAPI.setPlayerCurrentTitle(player, uid)) {
+            sender.sendLang("set-title-success", title.title)
+        } else {
+            sender.sendLang("set-title-failed")
         }
     }
 

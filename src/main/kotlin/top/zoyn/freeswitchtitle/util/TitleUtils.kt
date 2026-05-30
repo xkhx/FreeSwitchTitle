@@ -14,6 +14,7 @@ import taboolib.platform.util.bukkitPlugin
 import taboolib.platform.util.onlinePlayers
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
 import top.zoyn.freeswitchtitle.data.TitleData
+import top.zoyn.freeswitchtitle.hook.permission.PermissionGrantStore
 import top.zoyn.freeswitchtitle.hook.permission.PermissionManager
 import java.io.File
 import java.util.UUID
@@ -117,29 +118,39 @@ object TitleUtils {
         if (current == uid) return true
         val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
         if (player != null) {
-            current?.let { titleMap[it] }?.let { oldTitle ->
-                PermissionManager.revoke(player, oldTitle)
-                TitleEffectUtils.runUnequip(player, oldTitle)
-            }
             if (!PermissionManager.grant(player, title)) {
                 return false
             }
-            TitleEffectUtils.runEquip(player, title)
+            current?.let { titleMap[it] }?.let { oldTitle ->
+                val retainedPermissions = oldTitle.permissions.intersect(title.permissions.toSet())
+                PermissionGrantStore.getGrantedForTitle(uuid, oldTitle.uid)
+                    .intersect(retainedPermissions)
+                    .forEach { permission ->
+                        PermissionGrantStore.markGranted(uuid, title.uid, permission)
+                        PermissionGrantStore.unmarkGranted(uuid, oldTitle.uid, permission)
+                    }
+                PermissionManager.revoke(player, oldTitle, retainedPermissions)
+                TitleEffectUtils.runUnequip(player, oldTitle)
+            }
         }
         uuid.getPlayerDataContainer()[USING_KEY] = uid
+        if (player != null) {
+            TitleEffectUtils.runEquip(player, title)
+        }
         return true
     }
 
-    fun reset(uuid: UUID) {
-        val current = getUsing(uuid)
+    fun reset(uuid: UUID): Boolean {
+        val current = getUsing(uuid) ?: return false
         val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
         if (player != null) {
-            current?.let { titleMap[it] }?.let { oldTitle ->
+            titleMap[current]?.let { oldTitle ->
                 PermissionManager.revoke(player, oldTitle)
                 TitleEffectUtils.runUnequip(player, oldTitle)
             }
         }
         uuid.getPlayerDataContainer()[USING_KEY] = ""
+        return true
     }
 
     fun hasTitle(uuid: UUID, uid: String): Boolean {

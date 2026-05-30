@@ -20,6 +20,7 @@ object TitleEffectUtils {
 
     private fun runCommands(player: Player, title: TitleData, commands: List<String>) {
         commands.forEach { raw ->
+            if (raw.isBlank()) return@forEach
             val command = raw
                 .replace("{player}", player.name)
                 .replace("{uuid}", player.uniqueId.toString())

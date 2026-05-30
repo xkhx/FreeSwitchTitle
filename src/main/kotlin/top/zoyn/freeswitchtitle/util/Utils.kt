@@ -16,6 +16,10 @@ fun OfflinePlayer.setCurrentTitle(uid: String) = FreeSwitchTitleAPI.setPlayerCur
 
 fun OfflinePlayer.getOwnedTitle() = FreeSwitchTitleAPI.getPlayerOwnedTitle(this)
 
+fun OfflinePlayer.getTitleExpireAt(uid: String) = FreeSwitchTitleAPI.getTitleExpireAt(this, uid)
+
+fun OfflinePlayer.getTitleExpireText(uid: String) = FreeSwitchTitleAPI.getTitleExpireText(this, uid)
+
 fun OfflinePlayer.addTitle(uid: String) = FreeSwitchTitleAPI.addTitle(this, uid)
 
 fun OfflinePlayer.removeTitle(uid: String) = FreeSwitchTitleAPI.removeTitle(this, uid)
@@ -29,6 +33,10 @@ fun UUID.getCurrentTitle() = FreeSwitchTitleAPI.getPlayerCurrentTitle(this)
 fun UUID.setCurrentTitle(uid: String) = FreeSwitchTitleAPI.setPlayerCurrentTitle(this, uid)
 
 fun UUID.getOwnedTitle() = FreeSwitchTitleAPI.getPlayerOwnedTitle(this)
+
+fun UUID.getTitleExpireAt(uid: String) = FreeSwitchTitleAPI.getTitleExpireAt(this, uid)
+
+fun UUID.getTitleExpireText(uid: String) = FreeSwitchTitleAPI.getTitleExpireText(this, uid)
 
 fun UUID.addTitle(uid: String) = FreeSwitchTitleAPI.addTitle(this, uid)
 

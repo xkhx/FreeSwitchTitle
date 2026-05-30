@@ -20,6 +20,7 @@ import top.zoyn.freeswitchtitle.gui.type.GuiType.PLAYER_LIST
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_LIST
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_SHOP
 import top.zoyn.freeswitchtitle.util.ConfigUtils
+import top.zoyn.freeswitchtitle.util.TitleUtils
 import top.zoyn.freeswitchtitle.util.getCurrentTitle
 import top.zoyn.freeswitchtitle.util.getOwnedTitle
 import top.zoyn.freeswitchtitle.util.getPlayerName
@@ -120,32 +121,66 @@ object PlayerGui {
     }
 
     private fun extraLore(player: Player, title: TitleData, type: GuiType, uuid: UUID?): List<String> {
-        val lore = mutableListOf<String>()
         val owned = FreeSwitchTitleAPI.hasTitle(player, title.uid)
         val using = player.getCurrentTitle()?.uid == title.uid
-        when (type) {
-            PLAYER_LIST -> lore += if (using) ConfigUtils.statusUsing else ConfigUtils.statusClickEquip
-            TITLE_LIST -> lore += if (owned) ConfigUtils.statusOwned else ConfigUtils.statusNotOwned
+        return when (type) {
+            PLAYER_LIST -> if (using) {
+                renderLore(player, player.uniqueId, title, "player-list.using", listOf(ConfigUtils.statusUsing))
+            } else {
+                renderLore(player, player.uniqueId, title, "player-list.equip", listOf(ConfigUtils.statusClickEquip))
+            }
+            TITLE_LIST -> if (owned) {
+                renderLore(player, player.uniqueId, title, "title-list.owned", listOf(ConfigUtils.statusOwned))
+            } else {
+                renderLore(player, player.uniqueId, title, "title-list.not-owned", listOf(ConfigUtils.statusNotOwned))
+            }
             LOOK_PLAYER -> {
-                val targetOwned = title.uid in (uuid ?: player.uniqueId).getOwnedTitle().map { it.uid }
-                lore += if (targetOwned) ConfigUtils.statusOwned else ConfigUtils.statusNotOwned
+                val target = uuid ?: player.uniqueId
+                val targetOwned = FreeSwitchTitleAPI.hasTitle(target, title.uid)
+                if (targetOwned) {
+                    renderLore(player, target, title, "look-player.owned", listOf(ConfigUtils.statusOwned))
+                } else {
+                    renderLore(player, target, title, "look-player.not-owned", listOf(ConfigUtils.statusNotOwned))
+                }
             }
             TITLE_SHOP -> {
-                lore += when {
-                    owned -> ConfigUtils.statusOwned
-                    title.shopPermission.isNotBlank() && !player.hasPermission(title.shopPermission) -> ConfigUtils.statusNoPermission
-                    else -> ConfigUtils.statusClickBuy
+                val lore = when {
+                    owned -> renderLore(player, player.uniqueId, title, "shop.owned", listOf(ConfigUtils.statusOwned))
+                    title.shopPermission.isNotBlank() && !player.hasPermission(title.shopPermission) ->
+                        renderLore(player, player.uniqueId, title, "shop.no-permission", listOf(ConfigUtils.statusNoPermission))
+                    else -> renderLore(player, player.uniqueId, title, "shop.buy", listOf(ConfigUtils.statusClickBuy))
                 }
-                when (ConfigUtils.shopCurrency) {
-                    CurrencyType.VAULT -> lore += ConfigUtils.statusVaultPrice.replaceWithOrder(title.vaultPrice)
-                    CurrencyType.PLAYER_POINTS -> lore += ConfigUtils.statusPointsPrice.replaceWithOrder(title.pointsPrice)
+                lore + when (ConfigUtils.shopCurrency) {
+                    CurrencyType.VAULT -> renderLore(player, player.uniqueId, title, "shop.vault-price", listOf(ConfigUtils.statusVaultPrice), title.vaultPrice)
+                    CurrencyType.PLAYER_POINTS -> renderLore(player, player.uniqueId, title, "shop.points-price", listOf(ConfigUtils.statusPointsPrice), title.pointsPrice)
                     CurrencyType.BOTH -> {
-                        lore += ConfigUtils.statusVaultPrice.replaceWithOrder(title.vaultPrice)
-                        lore += ConfigUtils.statusPointsPrice.replaceWithOrder(title.pointsPrice)
+                        renderLore(player, player.uniqueId, title, "shop.vault-price", listOf(ConfigUtils.statusVaultPrice), title.vaultPrice) +
+                            renderLore(player, player.uniqueId, title, "shop.points-price", listOf(ConfigUtils.statusPointsPrice), title.pointsPrice)
                     }
                 }
             }
         }
-        return lore.colored()
+    }
+
+    private fun renderLore(
+        player: Player,
+        owner: UUID,
+        title: TitleData,
+        path: String,
+        fallback: List<String>,
+        vararg args: Any
+    ): List<String> {
+        return ConfigUtils.getGuiLoreTemplate(path, fallback)
+            .map { line ->
+                line.replaceWithOrder(*args)
+                    .replace("{uid}", title.uid)
+                    .replace("{title}", title.title)
+                    .replace("{duration}", title.durationText)
+                    .replace("{expire}", TitleUtils.getTitleExpireText(owner, title))
+                    .replace("{vault_price}", title.vaultPrice.toString())
+                    .replace("{points_price}", title.pointsPrice.toString())
+            }
+            .replacePlaceholder(player)
+            .colored()
     }
 }

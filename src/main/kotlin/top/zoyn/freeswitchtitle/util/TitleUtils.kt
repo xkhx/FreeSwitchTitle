@@ -12,6 +12,7 @@ import taboolib.module.configuration.Configuration
 import taboolib.module.configuration.Type
 import taboolib.platform.util.bukkitPlugin
 import taboolib.platform.util.onlinePlayers
+import taboolib.platform.util.sendLang
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
 import top.zoyn.freeswitchtitle.data.TitleData
 import top.zoyn.freeswitchtitle.hook.permission.PermissionGrantStore
@@ -23,6 +24,7 @@ object TitleUtils {
 
     private const val TITLE_LIST_KEY = "title_list"
     private const val USING_KEY = "using"
+    private const val TITLE_EXPIRE_KEY = "title_expire_map"
 
     private val titleMap = linkedMapOf<String, TitleData>()
 
@@ -44,6 +46,7 @@ object TitleUtils {
                 material = material,
                 lore = lore,
                 joinMessage = joinMessage,
+                durationMillis = ConfigUtils.getTitleDurationMillis(uid),
                 shopEnable = ConfigUtils.getTitleShopEnable(uid),
                 vaultPrice = ConfigUtils.getTitleVaultPrice(uid),
                 pointsPrice = ConfigUtils.getTitlePointsPrice(uid),
@@ -77,6 +80,11 @@ object TitleUtils {
     fun getTitleUidListAll(): List<String> = titleMap.keys.toList()
 
     fun getPlayerTitleUidList(uuid: UUID): List<String> {
+        cleanupExpiredTitles(uuid)
+        return getPlayerTitleUidListRaw(uuid)
+    }
+
+    private fun getPlayerTitleUidListRaw(uuid: UUID): List<String> {
         val data = uuid.getPlayerDataContainer()
         val text = data[TITLE_LIST_KEY].orEmpty()
         if (text.isBlank()) return emptyList()
@@ -86,20 +94,28 @@ object TitleUtils {
             .distinct()
     }
 
+    private fun savePlayerTitleUidList(uuid: UUID, uidList: List<String>) {
+        uuid.getPlayerDataContainer()[TITLE_LIST_KEY] = uidList.distinct().joinToString(", ")
+    }
+
     fun addTitle(uuid: UUID, uid: String): Boolean {
-        if (!titleMap.containsKey(uid)) return false
-        val titleUidList = getPlayerTitleUidList(uuid).toMutableList()
+        val title = titleMap[uid] ?: return false
+        cleanupExpiredTitles(uuid)
+        val titleUidList = getPlayerTitleUidListRaw(uuid).toMutableList()
         if (titleUidList.contains(uid)) return false
         titleUidList.add(uid)
-        uuid.getPlayerDataContainer()[TITLE_LIST_KEY] = titleUidList.joinToString(", ")
+        savePlayerTitleUidList(uuid, titleUidList)
+        setTitleExpireAt(uuid, uid, if (title.durationMillis > 0L) System.currentTimeMillis() + title.durationMillis else null)
         return true
     }
 
     fun removeTitle(uuid: UUID, uid: String): Boolean {
         if (!titleMap.containsKey(uid)) return false
-        val titleUidList = getPlayerTitleUidList(uuid).toMutableList()
+        cleanupExpiredTitles(uuid)
+        val titleUidList = getPlayerTitleUidListRaw(uuid).toMutableList()
         if (!titleUidList.remove(uid)) return false
-        uuid.getPlayerDataContainer()[TITLE_LIST_KEY] = titleUidList.joinToString(", ")
+        savePlayerTitleUidList(uuid, titleUidList)
+        setTitleExpireAt(uuid, uid, null)
         if (getUsing(uuid) == uid) {
             reset(uuid)
         }
@@ -107,6 +123,7 @@ object TitleUtils {
     }
 
     fun getUsing(uuid: UUID): String? {
+        cleanupExpiredTitles(uuid)
         val uid = uuid.getPlayerDataContainer()[USING_KEY]
         return uid?.takeIf { it.isNotBlank() && titleMap.containsKey(it) }
     }
@@ -153,8 +170,91 @@ object TitleUtils {
         return true
     }
 
+    fun cleanupOnlinePlayers() {
+        onlinePlayers.forEach { cleanupExpiredTitles(it.uniqueId) }
+    }
+
+    fun cleanupExpiredTitles(uuid: UUID): List<String> {
+        val titleUidList = getPlayerTitleUidListRaw(uuid)
+        if (titleUidList.isEmpty()) return emptyList()
+
+        val expirations = getTitleExpireMap(uuid).toMutableMap()
+        val now = System.currentTimeMillis()
+        val expired = titleUidList.filter { uid -> (expirations[uid] ?: 0L) in 1L..now }
+        val known = titleUidList.filter { titleMap.containsKey(it) }
+        val updated = known.filterNot { it in expired }
+
+        if (updated.size != titleUidList.size) {
+            savePlayerTitleUidList(uuid, updated)
+        }
+
+        if (expired.isNotEmpty()) {
+            expired.forEach { expirations.remove(it) }
+            saveTitleExpireMap(uuid, expirations)
+        }
+
+        val current = uuid.getPlayerDataContainer()[USING_KEY]
+        if (!current.isNullOrBlank() && current !in updated) {
+            val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
+            titleMap[current]?.let { oldTitle ->
+                if (player != null) {
+                    PermissionManager.revoke(player, oldTitle)
+                    TitleEffectUtils.runUnequip(player, oldTitle)
+                }
+            }
+            uuid.getPlayerDataContainer()[USING_KEY] = ""
+        }
+
+        val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
+        if (player != null) {
+            expired.mapNotNull { titleMap[it] }
+                .forEach { player.sendLang("title-expired", it.title) }
+        }
+        return expired
+    }
+
+    fun getTitleExpireAt(uuid: UUID, uid: String): Long? {
+        cleanupExpiredTitles(uuid)
+        return getTitleExpireMap(uuid)[uid]?.takeIf { it > 0L }
+    }
+
+    fun getTitleExpireText(uuid: UUID, title: TitleData): String {
+        if (!hasTitle(uuid, title.uid)) return title.durationText
+        return TitleDurationUtils.formatRemaining(getTitleExpireAt(uuid, title.uid))
+    }
+
     fun hasTitle(uuid: UUID, uid: String): Boolean {
         return getPlayerTitleUidList(uuid).contains(uid)
+    }
+
+    private fun getTitleExpireMap(uuid: UUID): Map<String, Long> {
+        val text = uuid.getPlayerDataContainer()[TITLE_EXPIRE_KEY].orEmpty()
+        if (text.isBlank()) return emptyMap()
+        return text.split(",")
+            .mapNotNull { entry ->
+                val parts = entry.split("=", limit = 2)
+                val uid = parts.getOrNull(0)?.trim().orEmpty()
+                val expireAt = parts.getOrNull(1)?.trim()?.toLongOrNull()
+                if (uid.isNotEmpty() && expireAt != null && expireAt > 0L) uid to expireAt else null
+            }
+            .toMap()
+    }
+
+    private fun saveTitleExpireMap(uuid: UUID, expirations: Map<String, Long>) {
+        uuid.getPlayerDataContainer()[TITLE_EXPIRE_KEY] = expirations
+            .filterValues { it > 0L }
+            .entries
+            .joinToString(",") { "${it.key}=${it.value}" }
+    }
+
+    private fun setTitleExpireAt(uuid: UUID, uid: String, expireAt: Long?) {
+        val expirations = getTitleExpireMap(uuid).toMutableMap()
+        if (expireAt != null && expireAt > 0L) {
+            expirations[uid] = expireAt
+        } else {
+            expirations.remove(uid)
+        }
+        saveTitleExpireMap(uuid, expirations)
     }
 
     @Awake(LifeCycle.DISABLE)

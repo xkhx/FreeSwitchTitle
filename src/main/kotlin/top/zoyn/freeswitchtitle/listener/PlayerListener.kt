@@ -11,6 +11,7 @@ import taboolib.expansion.setupDataContainer
 import taboolib.module.chat.colored
 import taboolib.platform.compat.replacePlaceholder
 import top.zoyn.freeswitchtitle.util.ConfigUtils
+import top.zoyn.freeswitchtitle.util.TitleUtils
 import top.zoyn.freeswitchtitle.util.getCurrentTitle
 
 object PlayerListener {
@@ -30,6 +31,7 @@ object PlayerListener {
     fun join(event: PlayerJoinEvent) {
         val player = event.player
         player.setupDataContainer()
+        TitleUtils.cleanupExpiredTitles(player.uniqueId)
         player.getCurrentTitle()?.let { title ->
             if (title.joinMessage.isNotEmpty()) {
                 event.joinMessage = title.joinMessage.replaceWithOrder(player.name)

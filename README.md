@@ -7,14 +7,14 @@ FreeSwitchTitle 是一个基于 TabooLib 的 Bukkit 称号插件, 支持称号�
 | 模块 | 状态 | 说明 |
 | --- | --- | --- |
 | 基础称号 | 已完成 | 称号加载、拥有、佩戴、取下、查看 |
-| GUI | 已完成 | 我的称号、商城、全部称号、查看他人 |
+| GUI | 已完成 | 我的称号、商城、全部称号、查看他人、配置化 lore |
 | 商城 | 已完成 | 支持 Vault、PlayerPoints、混合价格 |
 | 权限 | 已完成 | 支持 LuckPerms、GroupManager、NONE 模式 |
 | 动作 | 已完成 | 支持佩戴、卸下、购买时执行动作 |
 | PAPI | 已完成 | 支持 `%fst_title%`、`%fst_title_show%` |
 | 粒子效果 | 未完成 | `particle` 字段暂未落地 |
 | 属性加成 | 未完成 | `attribute` 字段暂未落地 |
-| 称号期限 | 未完成 | 暂未实现限时称号和过期清理 |
+| 称号期限 | 已完成 | 支持永久/限时称号、登录与在线周期过期清理 |
 
 ## 命令
 
@@ -46,7 +46,9 @@ fly:
   lore:
     - '&r恭喜你成为飞行员'
     - '&r点击佩戴这个称号'
+    - '&r称号期限: {duration}'
   join-message: "飞行员 {0} 加入了游戏"
+  duration: permanent
   shop:
     enable: true
     vault-price: 1000.0
@@ -70,6 +72,7 @@ fly:
 - `shop.points-price`: PlayerPoints 点券价格。
 - `shop.permission`: 购买该称号需要的权限。
 - `permission`: 玩家佩戴该称号时授予的权限。
+- `duration`: 称号有效期，`permanent` 表示永久，也支持 `7d`、`12h`、`30m`、`10s`、`1000ms`。
 - `actions`: 在佩戴、卸下、购买时执行的动作。
 
 动作格式:
@@ -89,6 +92,21 @@ fly:
 | `{uuid}` | 玩家 UUID |
 | `{title}` | 称号显示文本 |
 | `{uid}` | 称号 UID |
+
+## GUI lore 模板
+
+`gui.yml` 的 `gui.lore` 可配置不同界面和状态下追加到称号物品上的 lore。旧版 `gui.status` 仍作为兼容回退。
+
+可用变量:
+
+| 变量 | 说明 |
+| --- | --- |
+| `{title}` | 称号显示文本 |
+| `{uid}` | 称号 UID |
+| `{duration}` | 称号配置有效期 |
+| `{expire}` | 玩家拥有该称号时的剩余时间 |
+| `{vault_price}` | Vault 价格 |
+| `{points_price}` | PlayerPoints 价格 |
 
 ## PlaceholderAPI
 

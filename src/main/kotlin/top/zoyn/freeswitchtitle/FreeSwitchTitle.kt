@@ -14,6 +14,8 @@ import top.zoyn.freeswitchtitle.util.TitleUtils
 
 object FreeSwitchTitle : Plugin() {
 
+    private var titleExpiryTaskId = -1
+
     @Config("config.yml")
     lateinit var config: ConfigFile
 
@@ -24,9 +26,17 @@ object FreeSwitchTitle : Plugin() {
         sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.GOLD}FreeSwitchTitle 启动中...")
         loadPlayerData()
         reload()
+        startTitleExpiryTask()
         Metrics(1259, pluginVersion, Platform.BUKKIT)
         sendConsoleMessage("${ChatColor.GREEN}> 作者: ${ChatColor.WHITE}星空 ${ChatColor.GREEN}| 版本: ${ChatColor.WHITE}$pluginVersion")
         sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.GOLD}FreeSwitchTitle 启动成功")
+    }
+
+    override fun onDisable() {
+        if (titleExpiryTaskId != -1) {
+            bukkitPlugin.server.scheduler.cancelTask(titleExpiryTaskId)
+            titleExpiryTaskId = -1
+        }
     }
 
     fun reload() {
@@ -54,5 +64,14 @@ object FreeSwitchTitle : Plugin() {
         }
         val type = if (config.getBoolean("sql.enable")) "MySQL" else "SQLite"
         sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.RESET}$type ${ChatColor.AQUA}加载完成")
+    }
+
+    private fun startTitleExpiryTask() {
+        if (titleExpiryTaskId != -1) {
+            bukkitPlugin.server.scheduler.cancelTask(titleExpiryTaskId)
+        }
+        titleExpiryTaskId = bukkitPlugin.server.scheduler
+            .runTaskTimer(bukkitPlugin, Runnable { TitleUtils.cleanupOnlinePlayers() }, 20L * 60L, 20L * 60L * 10L)
+            .taskId
     }
 }

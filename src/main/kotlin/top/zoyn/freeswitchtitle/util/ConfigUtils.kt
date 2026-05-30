@@ -139,6 +139,11 @@ object ConfigUtils {
     val statusClickEquip: String
         get() = FreeSwitchTitle.guiConfig.getString("gui.status.click-equip") ?: "&a点击佩戴"
 
+    fun getGuiLoreTemplate(path: String, fallback: List<String>): List<String> {
+        val lore = FreeSwitchTitle.guiConfig.getStringList("gui.lore.$path")
+        return lore.ifEmpty { fallback }
+    }
+
     fun getGuiMaterial(path: String): XMaterial {
         val type = FreeSwitchTitle.guiConfig.getString(path) ?: error("gui.yml $path not found")
         return getMaterial(type)
@@ -155,9 +160,17 @@ object ConfigUtils {
 
     fun getTitle(uid: String): String = titleConfig.getString("$uid.title") ?: error("title.yml $uid.title not found")
 
-    fun getTitleLore(uid: String): List<String> = titleConfig.getStringList("$uid.lore")
+    fun getTitleLore(uid: String): List<String> {
+        val duration = getTitleDurationText(uid)
+        return titleConfig.getStringList("$uid.lore")
+            .map { it.replace("{duration}", duration) }
+    }
 
     fun getTitleJoinMessage(uid: String): String = titleConfig.getString("$uid.join-message") ?: ""
+
+    fun getTitleDurationMillis(uid: String): Long = TitleDurationUtils.parse(titleConfig.getString("$uid.duration"))
+
+    fun getTitleDurationText(uid: String): String = TitleDurationUtils.format(getTitleDurationMillis(uid))
 
     fun getTitleShopEnable(uid: String): Boolean = titleConfig.getBoolean("$uid.shop.enable", false)
 

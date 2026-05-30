@@ -60,6 +60,27 @@ object FreeSwitchTitleAPI {
     }
 
     @JvmStatic
+    fun getTitleExpireAt(player: OfflinePlayer, uid: String): Long? {
+        return getTitleExpireAt(player.uniqueId, uid)
+    }
+
+    @JvmStatic
+    fun getTitleExpireAt(uuid: UUID, uid: String): Long? {
+        return TitleUtils.getTitleExpireAt(uuid, uid)
+    }
+
+    @JvmStatic
+    fun getTitleExpireText(player: OfflinePlayer, uid: String): String {
+        return getTitleExpireText(player.uniqueId, uid)
+    }
+
+    @JvmStatic
+    fun getTitleExpireText(uuid: UUID, uid: String): String {
+        val title = TitleUtils.getTitleData(uid) ?: return ""
+        return TitleUtils.getTitleExpireText(uuid, title)
+    }
+
+    @JvmStatic
     fun resetPlayerTitle(player: OfflinePlayer): Boolean {
         return TitleUtils.reset(player.uniqueId)
     }

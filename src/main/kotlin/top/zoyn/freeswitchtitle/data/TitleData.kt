@@ -3,6 +3,7 @@ package top.zoyn.freeswitchtitle.data
 import org.bukkit.inventory.ItemStack
 import taboolib.library.xseries.XMaterial
 import taboolib.platform.util.buildItem
+import top.zoyn.freeswitchtitle.util.TitleDurationUtils
 
 data class TitleData(
     val uid: String,
@@ -10,6 +11,7 @@ data class TitleData(
     val material: XMaterial,
     val lore: List<String>,
     val joinMessage: String,
+    val durationMillis: Long,
     val shopEnable: Boolean,
     val vaultPrice: Double,
     val pointsPrice: Int,
@@ -19,6 +21,9 @@ data class TitleData(
     val unequipActions: List<String>,
     val buyActions: List<String>,
 ) {
+    val durationText: String
+        get() = TitleDurationUtils.format(durationMillis)
+
     fun buildDisplayItem(extraLore: List<String> = emptyList()): ItemStack {
         return buildItem(material) {
             name = title

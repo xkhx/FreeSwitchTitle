@@ -4,8 +4,10 @@ fly:
   lore:
     - '&r恭喜你成为飞行员'
     - '&r点击佩戴这个称号'
-    - '&r称号期限: 永久'
+    - '&r称号期限: {duration}'
   join-message: '&b飞行员 &f{0} &b加入了游戏'
+  # permanent 表示永久，限时称号可填写 7d、12h、30m、10s 等
+  duration: permanent
   shop:
     enable: true
     vault-price: 1000.0

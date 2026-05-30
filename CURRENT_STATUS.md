@@ -1,15 +1,14 @@
 # FreeSwitchTitle 当前开发状态
 
-## 当前分支与提交
+## 分支与提交
 
-- 当前本地分支：`master`
-- 最近本地提交：
-  - `90af23e Improve title commands and switch handling`
-  - `cc378d0 Add title shop economy and permission hooks`
-- 已覆盖推送到远程 `dev` 的提交：`cc378d0`
-- 注意：`90af23e` 目前是本地提交，尚未推送到远程。
+- 当前本地分支：`dev`
+- 当前跟踪远程：`origin/dev`
+- 远程 `dev` 最新提交：
+  - `dabf27a Add title action executor`
+- 当前本地在 `dabf27a` 之上继续开发，存在未提交改动。
 
-## 构建状态
+## 最新构建状态
 
 最新一次完整构建结果：
 
@@ -18,323 +17,121 @@
 BUILD SUCCESSFUL
 ```
 
-该构建已在动作系统改动完成后执行，验证了：
+本次构建已覆盖：
 
-- 称号商城经济逻辑
-- 权限发放/回收逻辑
-- `/fst buy`
-- `/fst look`
-- `/fst set`
-- `/fst clear`
-- `/fst reset` 返回值修复
-- 称号切换权限回滚修复
-- TrMenu 风格称号动作系统编译通过
+- TrMenu 风格称号动作系统
+- GUI lore 模板化
+- 称号有效期基础系统
+- 登录与在线周期过期清理
 
-## 已完成并提交的功能
+## 已完成并推送的功能
 
-### 1. 称号商城经济系统
+### 1. TrMenu 风格称号动作系统
 
-已实现：
-
-- Vault 经济购买
-- PlayerPoints 购买
-- BOTH 双货币购买
-- 余额检查
-- 扣款失败处理
-- 添加称号失败后的退款回滚
-- 购买结果提示
-
-相关文件：
-
-```text
-src/main/kotlin/top/zoyn/freeswitchtitle/hook/economy/
-```
-
-### 2. Vault 接入
-
-当前使用 TabooLib 提供的：
-
-```kotlin
-VaultService.economy
-```
-
-并通过 Vault API 执行：
-
-- `getBalance`
-- `has`
-- `withdrawPlayer`
-- `depositPlayer`
-
-`build.gradle.kts` 中 VaultAPI 使用非传递依赖，避免拉取旧 Bukkit：
-
-```kotlin
-compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
-    isTransitive = false
-}
-```
-
-### 3. PlayerPoints 接入
-
-当前 PlayerPoints 使用反射调用，原因是 Maven 坐标解析失败。
-
-现状：
-
-- 暂时不处理该问题。
-- 后续如果需要，可以改成把 PlayerPoints jar 放入 `libs` 后强类型调用。
-
-### 4. 权限系统
-
-已实现：
-
-- LuckPerms 权限发放/回收
-- GroupManager 命令式发放/回收
-- NONE 模式
-- 安全记录本插件实际授予过的权限，避免误删玩家原有权限
-
-相关文件：
-
-```text
-src/main/kotlin/top/zoyn/freeswitchtitle/hook/permission/
-```
-
-### 5. 称号切换逻辑修复
-
-已修复旧问题：
-
-- 原本切换称号时会先卸下旧称号，再尝试发放新称号权限。
-- 如果新称号权限发放失败，会导致玩家数据仍显示旧称号，但旧称号权限已经被移除。
-
-现在逻辑：
-
-1. 先尝试发放新称号权限。
-2. 成功后再卸下旧称号。
-3. 写入当前称号。
-4. 执行新称号佩戴动作。
-
-另外已处理重叠权限问题：
-
-- 如果旧称号和新称号拥有相同权限，不会误删这些重叠权限。
-- 重叠权限的授权记录会从旧称号转移到新称号。
-
-### 6. 命令补齐
-
-已新增：
-
-```text
-/fst buy <uid>
-/fst look <player>
-/fst set <player> <uid>
-/fst clear <player>
-```
-
-已修复：
-
-```text
-/fst reset
-```
-
-现在没有佩戴称号时会发送失败提示，而不是永远提示成功。
-
-### 7. PlaceholderAPI 扩展
-
-当前支持：
-
-```text
-%fst_title%
-%fst_title_show%
-%fst_title_uid%
-%fst_title_count%
-```
-
-## 当前正在开发的功能
-
-### TrMenu 风格动作系统
-
-当前处于未提交完成状态，已构建验证。
-
-已修改文件：
-
-```text
-src/main/kotlin/top/zoyn/freeswitchtitle/data/TitleData.kt
-src/main/kotlin/top/zoyn/freeswitchtitle/util/ConfigUtils.kt
-src/main/kotlin/top/zoyn/freeswitchtitle/util/TitleEffectUtils.kt
-src/main/kotlin/top/zoyn/freeswitchtitle/util/TitleUtils.kt
-```
-
-当前已完成的动作系统改动：
-
-1. `TitleData` 字段从命令语义改为动作语义：
-
-```kotlin
-val equipActions: List<String>
-val unequipActions: List<String>
-val buyActions: List<String>
-```
-
-2. `ConfigUtils` 新增动作读取逻辑：
-
-- 优先读取：
-
-```yaml
-actions:
-  equip:
-  unequip:
-  buy:
-```
-
-- 如果新配置为空，则回退读取旧配置：
-
-```yaml
-commands:
-  equip:
-  unequip:
-  buy:
-```
-
-3. `TitleEffectUtils` 已改为动作执行器，当前支持：
-
-```text
-[console]
-[player]
-[op]
-[message]
-```
-
-4. 无前缀动作默认按 `[console]` 执行，以兼容旧配置。
-
-命令类动作会兼容开头 `/`，执行前会自动去掉命令前导 `/`。
-
-5. 默认示例配置已从 `commands:` 更新为 `actions:`：
-
-```text
-src/main/resources/titledata/title.yml
-```
-
-6. 已搜索旧命名引用，`equipCommands`、`unequipCommands`、`buyCommands`、`runCommands` 等旧命名无残留。
-
-7. 旧 `commands:` 配置路径仅在 `ConfigUtils` 中作为兼容回退保留：
-
-```kotlin
-titleConfig.getStringList("$uid.commands.$type")
-```
-
-当前动作示例：
-
-```yaml
-actions:
-  equip:
-    - '[console] say {player} 佩戴了 {title}'
-    - '[message] &a你佩戴了 {title}'
-  unequip:
-    - '[message] &c你卸下了 {title}'
-  buy:
-    - '[message] &a你购买了 {title}'
-```
-
-支持变量：
-
-```text
-{player}
-{uuid}
-{title}
-{uid}
-```
-
-## 动作系统当前状态
-
-第一版动作系统已完成，包含：
+已实现并推送到 `origin/dev`：
 
 - 支持 `[console]`
 - 支持 `[player]`
 - 支持 `[op]`
 - 支持 `[message]`
 - 无前缀动作默认按 `[console]` 执行
-- 优先读取 `actions` 配置
-- `actions` 为空时回退读取旧 `commands` 配置
+- `actions` 配置优先
+- `commands` 配置作为兼容回退
+- 命令动作兼容前导 `/`
 
-已完成构建验证：
+### 2. 称号商城与权限系统
 
-```bash
-./gradlew.bat build
-```
+已实现：
 
-```text
-BUILD SUCCESSFUL
-```
+- Vault 购买
+- PlayerPoints 购买
+- BOTH 双货币购买
+- LuckPerms 权限发放/回收
+- GroupManager 命令式权限发放/回收
+- NONE 权限模式
+- 安全记录本插件实际授予过的权限，避免误删玩家原有权限
 
-当前未提交，未 push。
+### 3. 命令与 PlaceholderAPI
 
-## 暂时不做的功能
+已实现：
 
-### `/fst balance`
+- `/fst buy <uid>`
+- `/fst look <player>`
+- `/fst set <player> <uid>`
+- `/fst clear <player>`
+- `/fst reset` 返回值修复
+- `%fst_title%`
+- `%fst_title_show%`
+- `%fst_title_uid%`
+- `%fst_title_count%`
 
-用户明确说明暂时不需要，因此不实现。
+## 当前未提交开发内容
 
-### PlayerPoints 强类型依赖
+### 1. GUI lore 模板化
 
-暂时不处理，继续保留反射调用。
+已实现本地改动：
 
-### GUI lore 模板化
+- 新增 `gui.lore.*` 模板配置。
+- GUI 称号物品追加 lore 改为读取模板。
+- 旧 `gui.status.*` 仍作为兼容回退。
+- 支持模板变量：
+  - `{title}`
+  - `{uid}`
+  - `{duration}`
+  - `{expire}`
+  - `{vault_price}`
+  - `{points_price}`
 
-已列为后续任务，但当前未开始。
+### 2. 称号有效期系统
 
-### 称号有效期系统
+已实现本地改动：
 
-已列为后续任务，但当前未开始。
-
-## 后续任务列表
-
-### 1. 提交动作系统
-
-优先级：中
-
-剩余事项：
-
-- 检查 diff
-- 提交动作系统改动
-- 如需要，再推送远程
-
-### 2. GUI lore 模板化
-
-优先级：中
-
-目标：
-
-- 将当前写死在代码里的 GUI 状态 lore 改成配置模板。
-- 支持不同状态使用不同 lore。
-
-### 3. 称号有效期系统
-
-优先级：低
-
-目标：
-
-- 支持限时称号。
-- 支持永久称号。
-- 支持登录或定时检查过期称号。
+- `title.yml` 新增 `duration` 配置。
+- 支持永久称号：`permanent`、`forever`、`永久`、`0`。
+- 支持限时称号：`7d`、`12h`、`30m`、`10s`、`1000ms`。
+- 无单位数字按秒解析。
+- 玩家拥有称号时记录到期时间。
+- 过期称号会从玩家拥有列表中移除。
+- 如果当前佩戴称号过期，会自动卸下并回收权限。
+- 玩家登录时清理过期称号。
+- 在线玩家每 10 分钟周期清理一次。
 
 ## 当前工作区状态
 
-当前存在未提交改动，均属于动作系统开发：
+当前存在未提交改动：
 
 ```text
+M src/main/kotlin/top/zoyn/freeswitchtitle/FreeSwitchTitle.kt
+M src/main/kotlin/top/zoyn/freeswitchtitle/api/FreeSwitchTitleAPI.kt
 M src/main/kotlin/top/zoyn/freeswitchtitle/data/TitleData.kt
+M src/main/kotlin/top/zoyn/freeswitchtitle/gui/PlayerGui.kt
+M src/main/kotlin/top/zoyn/freeswitchtitle/listener/PlayerListener.kt
 M src/main/kotlin/top/zoyn/freeswitchtitle/util/ConfigUtils.kt
-M src/main/kotlin/top/zoyn/freeswitchtitle/util/TitleEffectUtils.kt
 M src/main/kotlin/top/zoyn/freeswitchtitle/util/TitleUtils.kt
-M README.md
+M src/main/kotlin/top/zoyn/freeswitchtitle/util/Utils.kt
+M src/main/resources/gui.yml
+M src/main/resources/lang/zh_CN.yml
 M src/main/resources/titledata/title.yml
-?? CURRENT_STATUS.md
+M README.md
+?? src/main/kotlin/top/zoyn/freeswitchtitle/util/TitleDurationUtils.kt
 ```
+
+## 尚未完成
+
+- 尚未进行真实服务器运行时验证。
+- 尚未提交本次 GUI lore 模板化与称号有效期改动。
+- 暂不处理 `/fst balance`。
+- 暂不处理 PlayerPoints 强类型依赖。
 
 ## 建议下一步
 
-建议下一步处理提交：
-
-1. 确认是否要把 `CURRENT_STATUS.md` 纳入版本管理。
-2. 检查动作系统 diff。
-3. 提交：
+1. 做真实服务器内验证：
+   - GUI lore 模板是否按状态渲染。
+   - 永久称号是否不受过期逻辑影响。
+   - 限时称号是否能自动过期。
+   - 当前佩戴限时称号过期后是否卸下并回收权限。
+2. 验证通过后提交：
 
 ```text
-Add title action executor
+Add title expiry and GUI lore templates
 ```

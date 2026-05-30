@@ -47,7 +47,45 @@ gui:
     name: "&f下一页"
     last-name: "&7下一页"
 
-  # 称号物品追加状态
+  # 称号物品追加 lore 模板
+  # 可用变量: {title}, {uid}, {duration}, {expire}, {vault_price}, {points_price}
+  lore:
+    player-list:
+      using:
+        - '&a状态: 正在使用'
+        - '&7剩余时间: &f{expire}'
+      equip:
+        - '&a点击佩戴'
+        - '&7称号期限: &f{duration}'
+    title-list:
+      owned:
+        - '&e状态: 已拥有'
+        - '&7剩余时间: &f{expire}'
+      not-owned:
+        - '&7状态: 未拥有'
+        - '&7称号期限: &f{duration}'
+    look-player:
+      owned:
+        - '&e状态: 已拥有'
+        - '&7剩余时间: &f{expire}'
+      not-owned:
+        - '&7状态: 未拥有'
+    shop:
+      owned:
+        - '&e状态: 已拥有'
+        - '&7剩余时间: &f{expire}'
+      no-permission:
+        - '&c状态: 无权限购买'
+        - '&7称号期限: &f{duration}'
+      buy:
+        - '&a点击购买'
+        - '&7称号期限: &f{duration}'
+      vault-price:
+        - '&6金币价格: {0}'
+      points-price:
+        - '&b点券价格: {0}'
+
+  # 旧版称号物品追加状态，作为 gui.lore 缺失时的兼容回退
   status:
     using: '&a状态: 正在使用'
     owned: '&e状态: 已拥有'

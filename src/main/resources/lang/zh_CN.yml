@@ -14,6 +14,7 @@ reset-title-message: '&a已取下当前称号。'
 reset-title-failed: '&c当前没有可卸下的称号。'
 switch-title-success: '&a成功切换称号为: &f{0}'
 switch-title-failed: '&c切换称号失败，可能未拥有该称号。'
+title-expired: '&e称号 &f{0}&e 已过期并自动移除。'
 view-only-title: '&e该界面仅用于查看称号。'
 
 purchase-success: '&a成功购买称号 &f{0}&a。'

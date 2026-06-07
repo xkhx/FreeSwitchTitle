@@ -320,4 +320,4 @@ top.zoyn.freeswitchtitle.api.FreeSwitchTitleAPI
 
 ## License
 
-见 [`LICENSE`](LICENSE)。
+This project is licensed under the Apache License 2.0. See [`LICENSE`](LICENSE) for details.

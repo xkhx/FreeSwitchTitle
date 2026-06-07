@@ -46,55 +46,70 @@ object TitleUtils {
 
     fun loadTitleData() {
         titleMap.clear()
-        titleConfig = loadTitleConfig()
-        FreeSwitchTitle.sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.RESET}称号配置文件加载: ${ChatColor.WHITE}${titleConfig.file?.absolutePath}")
-        for (uid in titleConfig.getKeys(false)) {
-            val title = ConfigUtils.getTitle(uid).colored()
-            val material = ConfigUtils.getTitleMaterial(uid)
-            val lore = ConfigUtils.getTitleLore(uid).colored()
-            val joinMessage = ConfigUtils.getTitleJoinMessage(uid).colored()
-            titleMap[uid] = TitleData(
-                uid = uid,
-                title = title,
-                material = material,
-                lore = lore,
-                joinMessage = joinMessage,
-                category = ConfigUtils.getTitleCategory(uid),
-                rarity = ConfigUtils.getTitleRarity(uid),
-                hidden = ConfigUtils.getTitleHidden(uid),
-                durationMillis = ConfigUtils.getTitleDurationMillis(uid),
-                shopEnable = ConfigUtils.getTitleShopEnable(uid),
-                shopAvailableFrom = ConfigUtils.getTitleShopAvailableFrom(uid),
-                shopAvailableUntil = ConfigUtils.getTitleShopAvailableUntil(uid),
-                shopCurrency = ConfigUtils.getTitleShopCurrency(uid),
-                vaultPrice = ConfigUtils.getTitleVaultPrice(uid),
-                pointsPrice = ConfigUtils.getTitlePointsPrice(uid),
-                shopPermission = ConfigUtils.getTitleShopPermission(uid),
-                requiredPermissions = ConfigUtils.getTitleRequiredPermissions(uid),
-                permissions = ConfigUtils.getTitlePermissions(uid),
-                equipActions = ConfigUtils.getTitleEquipActions(uid),
-                unequipActions = ConfigUtils.getTitleUnequipActions(uid),
-                buyActions = ConfigUtils.getTitleBuyActions(uid),
-                expireActions = ConfigUtils.getTitleExpireActions(uid),
-                obtainActions = ConfigUtils.getTitleObtainActions(uid),
-                removeActions = ConfigUtils.getTitleRemoveActions(uid),
-                resetActions = ConfigUtils.getTitleResetActions(uid)
-            )
+        val configs = loadTitleConfigs()
+        configs.forEach { config ->
+            titleConfig = config
+            FreeSwitchTitle.sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.RESET}称号配置文件加载: ${ChatColor.WHITE}${config.file?.absolutePath}")
+            for (uid in config.getKeys(false)) {
+                if (titleMap.containsKey(uid)) {
+                    FreeSwitchTitle.sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.YELLOW}跳过重复称号 UID: ${ChatColor.WHITE}$uid ${ChatColor.GRAY}(${config.file?.name})")
+                    continue
+                }
+                titleMap[uid] = buildTitleData(uid)
+            }
         }
         FreeSwitchTitle.sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.WHITE}${titleMap.size} ${ChatColor.RESET}个称号加载完成!")
     }
 
-    private fun loadTitleConfig(): Configuration {
+    private fun buildTitleData(uid: String): TitleData {
+        val title = ConfigUtils.getTitle(uid).colored()
+        val material = ConfigUtils.getTitleMaterial(uid)
+        val lore = ConfigUtils.getTitleLore(uid).colored()
+        val joinMessage = ConfigUtils.getTitleJoinMessage(uid).colored()
+        return TitleData(
+            uid = uid,
+            title = title,
+            material = material,
+            lore = lore,
+            joinMessage = joinMessage,
+            category = ConfigUtils.getTitleCategory(uid),
+            rarity = ConfigUtils.getTitleRarity(uid),
+            hidden = ConfigUtils.getTitleHidden(uid),
+            durationMillis = ConfigUtils.getTitleDurationMillis(uid),
+            shopEnable = ConfigUtils.getTitleShopEnable(uid),
+            shopAvailableFrom = ConfigUtils.getTitleShopAvailableFrom(uid),
+            shopAvailableUntil = ConfigUtils.getTitleShopAvailableUntil(uid),
+            shopCurrency = ConfigUtils.getTitleShopCurrency(uid),
+            vaultPrice = ConfigUtils.getTitleVaultPrice(uid),
+            pointsPrice = ConfigUtils.getTitlePointsPrice(uid),
+            shopPermission = ConfigUtils.getTitleShopPermission(uid),
+            requiredPermissions = ConfigUtils.getTitleRequiredPermissions(uid),
+            permissions = ConfigUtils.getTitlePermissions(uid),
+            particleEffect = ConfigUtils.getTitleParticleEffect(uid),
+            equipActions = ConfigUtils.getTitleEquipActions(uid),
+            unequipActions = ConfigUtils.getTitleUnequipActions(uid),
+            buyActions = ConfigUtils.getTitleBuyActions(uid),
+            expireActions = ConfigUtils.getTitleExpireActions(uid),
+            obtainActions = ConfigUtils.getTitleObtainActions(uid),
+            removeActions = ConfigUtils.getTitleRemoveActions(uid),
+            resetActions = ConfigUtils.getTitleResetActions(uid)
+        )
+    }
+
+    private fun loadTitleConfigs(): List<Configuration> {
         val path = ConfigUtils.titlePath.replaceWithOrder(getDataFolder().absolutePath)
         val folder = File(path)
-        val file = File(folder, "title.yml")
-        if (!file.exists()) {
-            newFile(file).writeBytes(
+        val defaultFile = File(folder, "title.yml")
+        if (!defaultFile.exists()) {
+            newFile(defaultFile).writeBytes(
                 bukkitPlugin.getResource("titledata/title.yml")?.readBytes()
                     ?: error("resource not found: titledata/title.yml")
             )
         }
-        return Configuration.loadFromFile(file, Type.YAML)
+        return folder.listFiles { file -> file.isFile && file.extension.equals("yml", ignoreCase = true) }
+            ?.sortedWith(compareBy<File> { if (it.name.equals("title.yml", ignoreCase = true)) 0 else 1 }.thenBy { it.name.lowercase() })
+            ?.map { Configuration.loadFromFile(it, Type.YAML) }
+            .orEmpty()
     }
 
     fun getTitleData(uid: String): TitleData? = titleMap[uid]
@@ -187,8 +202,8 @@ object TitleUtils {
 
     fun getPlayerTitleUidList(uuid: UUID): List<String> {
         migratePlayerData(uuid)
-        cleanupExpiredTitles(uuid)
-        return getPlayerTitleUidListRaw(uuid)
+        cleanupExpiredTitlesSafely(uuid)
+        return getPlayerTitleUidListRaw(uuid).filterNot { isTitleExpired(uuid, it) }
     }
 
     private fun getPlayerTitleUidListRaw(uuid: UUID): List<String> {
@@ -263,9 +278,9 @@ object TitleUtils {
 
     fun getUsing(uuid: UUID): String? {
         migratePlayerData(uuid)
-        cleanupExpiredTitles(uuid)
+        cleanupExpiredTitlesSafely(uuid)
         val uid = uuid.getPlayerDataContainer()[USING_KEY]
-        return uid?.takeIf { it.isNotBlank() && titleMap.containsKey(it) }
+        return uid?.takeIf { it.isNotBlank() && titleMap.containsKey(it) && !isTitleExpired(uuid, it) }
     }
 
     fun using(uuid: UUID, uid: String): Boolean {
@@ -297,6 +312,7 @@ object TitleUtils {
             callEvent(TitleUnequipEvent(player, it, "SWITCH"))
         }
         uuid.getPlayerDataContainer()[USING_KEY] = uid
+        TitleParticleManager.start(player, title)
         TitleEffectUtils.runEquip(player, title)
         return TitleOperationResult.SUCCESS
     }
@@ -314,6 +330,7 @@ object TitleUtils {
         val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
         if (player != null) {
             PermissionManager.revoke(player, title)
+            TitleParticleManager.stop(player)
             TitleEffectUtils.runUnequip(player, title)
             TitleEffectUtils.runReset(player, title)
             callEvent(TitleUnequipEvent(player, title, "RESET"))
@@ -326,7 +343,24 @@ object TitleUtils {
         onlinePlayers.forEach { cleanupExpiredTitles(it.uniqueId) }
     }
 
+    private fun cleanupExpiredTitlesSafely(uuid: UUID) {
+        if (bukkitPlugin.server.isPrimaryThread) {
+            cleanupExpiredTitles(uuid)
+        } else if (getPlayerTitleUidListRaw(uuid).any { isTitleExpired(uuid, it) }) {
+            bukkitPlugin.server.scheduler.runTask(bukkitPlugin, Runnable { cleanupExpiredTitles(uuid) })
+        }
+    }
+
+    private fun isTitleExpired(uuid: UUID, uid: String): Boolean {
+        val expireAt = getTitleExpireMap(uuid)[uid] ?: return false
+        return expireAt > 0L && expireAt <= System.currentTimeMillis()
+    }
+
     fun cleanupExpiredTitles(uuid: UUID): List<String> {
+        if (!bukkitPlugin.server.isPrimaryThread) {
+            bukkitPlugin.server.scheduler.runTask(bukkitPlugin, Runnable { cleanupExpiredTitles(uuid) })
+            return emptyList()
+        }
         migratePlayerData(uuid)
         val titleUidList = getPlayerTitleUidListRaw(uuid)
         if (titleUidList.isEmpty()) return emptyList()
@@ -355,6 +389,7 @@ object TitleUtils {
             titleMap[current]?.let { oldTitle ->
                 if (player != null) {
                     PermissionManager.revoke(player, oldTitle)
+                    TitleParticleManager.stop(player)
                     TitleEffectUtils.runUnequip(player, oldTitle)
                     callEvent(TitleUnequipEvent(player, oldTitle, "EXPIRE"))
                 }
@@ -387,7 +422,7 @@ object TitleUtils {
     }
 
     fun getTitleExpireAt(uuid: UUID, uid: String): Long? {
-        cleanupExpiredTitles(uuid)
+        cleanupExpiredTitlesSafely(uuid)
         return getTitleExpireMap(uuid)[uid]?.takeIf { it > 0L }
     }
 

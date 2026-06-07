@@ -7,12 +7,13 @@ gui:
     shop-title: "称号商城"
     my-title: "{0} 的称号列表"
     collection-title: "称号图鉴"
+    category-title: "选择称号分类"
 
   # 列表布局
   map:
     - "#########"
     - "#@@@@@@@#"
-    - "L###M###N"
+    - "L#C#M###N"
 
   # 显示称号列表的位置
   slotBy: '@'
@@ -32,6 +33,37 @@ gui:
       - "&r正在使用: %fst_title_show%"
       - "&r拥有称号: %fst_title_count% 个"
       - "&r收藏进度: %fst_title_collected%/%fst_title_total% (%fst_title_progress%)"
+
+  # 分类筛选
+  category:
+    type: COMPASS
+    slot: 'C'
+    name: "&f分类筛选"
+    lore:
+      - "&7当前分类: &f{category}"
+      - "&a点击切换分类"
+
+  # 分类选择菜单
+  category-menu:
+    all:
+      type: BOOK
+      name: "&a全部分类"
+      lore:
+        - "&7查看全部称号"
+    item:
+      type: PAPER
+      name: "&f{category}"
+      lore:
+        - "&7点击查看该分类"
+
+  # 图鉴未解锁物品显示
+  locked-collection:
+    type: GRAY_DYE
+    name: "&8???"
+    lore:
+      - "&7尚未解锁该称号"
+      - "&7稀有度: {rarity_color}{rarity_name}"
+      - "&7收藏进度: &f{collected}/{total} &7({progress})"
 
   # 上一页
   previous:

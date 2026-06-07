@@ -1,5 +1,6 @@
 package top.zoyn.freeswitchtitle.hook.economy
 
+import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import taboolib.platform.compat.VaultService
 
@@ -8,6 +9,10 @@ object VaultEconomy {
     fun isAvailable(): Boolean = VaultService.economy != null
 
     fun getBalance(player: Player): Double {
+        return getBalance(player as OfflinePlayer)
+    }
+
+    fun getBalance(player: OfflinePlayer): Double {
         return VaultService.economy?.getBalance(player) ?: 0.0
     }
 

@@ -1,0 +1,64 @@
+# 粒子预设配置
+# 称号中可通过 effects.particle: <预设名> 或 effects.particle.preset: <预设名> 引用
+# shape 可选：HALO(头顶光环), RING(固定高度圆环), AURA(环绕光晕), SPIRAL(螺旋), TRAIL(脚印轨迹), WINGS(背后翅膀)
+
+particles:
+  halo:
+    enable: true
+    type: END_ROD
+    shape: HALO
+    interval: 10
+    count: 1
+    radius: 0.8
+    height: 0.0
+    points: 24
+    speed: 0.0
+    offset:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+
+  flame-spiral:
+    enable: true
+    type: FLAME
+    shape: SPIRAL
+    interval: 5
+    count: 1
+    radius: 0.7
+    height: 0.0
+    points: 18
+    speed: 0.0
+    offset:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+
+  cloud-trail:
+    enable: true
+    type: CLOUD
+    shape: TRAIL
+    interval: 5
+    count: 1
+    radius: 0.25
+    height: 0.0
+    points: 8
+    speed: 0.0
+    offset:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+
+  angel-wings:
+    enable: true
+    type: END_ROD
+    shape: WINGS
+    interval: 4
+    count: 1
+    radius: 1.35
+    height: 0.0
+    points: 22
+    speed: 0.0
+    offset:
+      x: 0.0
+      y: 0.0
+      z: 0.0

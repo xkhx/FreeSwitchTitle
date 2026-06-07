@@ -28,6 +28,12 @@ BUILD SUCCESSFUL
 - M5 稀有度、称号图鉴、隐藏称号、收藏进度与收藏奖励
 - M6 数据版本、迁移备份、旧数据自动升级与获得元数据
 - M7 开发者 API 结果对象与 Bukkit 事件
+- GUI 分类选择菜单
+- 图鉴未解锁称号灰色占位显示
+- 管理员 `/fst balance <player>` 查询在线玩家余额
+- `/fst validate` 配置检查命令
+- 称号内置粒子效果：HALO、RING、AURA、SPIRAL、TRAIL、WINGS
+- 独立 `particles.yml` 粒子预设配置，称号可复用预设
 
 ## 已完成并推送的功能
 
@@ -357,12 +363,29 @@ plugins/PlaceholderAPI-2.11.6.jar
 - PlaceholderAPI 在快速停止服务端时出现异步更新检查异常。
 - FreeSwitchTitle 出现 PlaceholderAPI softdepend 警告；插件仍正常加载和注册占位符。
 
+## 最新增强功能
+
+本轮已按推荐方向完成以下增强，并通过 `./gradlew.bat build`：
+
+- GUI 新增分类筛选按钮与分类选择菜单，玩家可在 `/fst open`、`/fst shop`、`/fst collection`、`/fst list` 打开的 GUI 中切换分类。
+- 图鉴未解锁称号改为灰色占位物品显示，避免提前暴露称号名和完整 lore，同时保留稀有度与收藏进度提示。
+- `/fst balance <player>` 支持管理员查询在线玩家 Vault / PlayerPoints 余额，需要 `freeswitchtitle.command.balance.other` 权限。
+- 新增 `/fst validate`，可检查称号数量、分类数量、收藏奖励引用、价格负数、空权限节点等常见配置问题。
+- `gui.yml` 与 `lang/zh_CN.yml` 已同步新增相关配置项和语言项。
+- 已新增独立 `particles.yml` 粒子预设配置，称号可通过 `effects.particle: <预设名>` 或 `effects.particle.preset: <预设名>` 复用预设。
+- 仍兼容称号内联 `effects.particle` 完整配置，适合少量特殊称号覆盖。
+- 粒子生命周期支持佩戴启动、切换/卸下/过期/退出/插件关闭自动停止。
+- 粒子形状支持 `HALO`、`RING`、`AURA`、`SPIRAL`、`TRAIL`、`WINGS`，可配置粒子类型、刷新间隔、数量、半径、高度、点数、速度和偏移。
+- `particles.yml` 已内置 `angel-wings` 翅膀预设，可直接在称号中使用 `effects.particle: angel-wings`。
+- `/fst show <uid>` 会显示称号粒子预设/类型/形状，`/fst validate` 会检查 `particles.yml` 与称号粒子配置中的粒子类型是否合法。
+- 该方案不依赖 PlayerParticles；项目已安装 TabooLib `MinecraftEffect` 环境模块，当前实现使用 Bukkit 原生粒子生成，后续可基于 `minecraft-effect` 扩展更复杂形状。
+
 ## 尚未完成
 
 - 尚未进行在线玩家 GUI 实操验证。
 - 尚未进行在线玩家购买、佩戴、卸下、重置完整流程验证。
 - 测试服当前未安装 Vault / PlayerPoints / LuckPerms / GroupManager，暂未验证经济与权限插件联动。
-- `/fst balance` 已实现玩家自查；管理员查看他人余额后续再扩展。
+- `/fst balance` 已实现玩家自查与管理员查看在线玩家余额。
 - 暂不处理 PlayerPoints 强类型依赖。
 
 ## 建议下一步

@@ -3,6 +3,8 @@ package top.zoyn.freeswitchtitle.util
 import taboolib.common5.cchar
 import taboolib.library.xseries.XMaterial
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
+import top.zoyn.freeswitchtitle.data.TitleParticleEffect
+import top.zoyn.freeswitchtitle.data.TitleParticleShape
 import top.zoyn.freeswitchtitle.data.TitleRarity
 import top.zoyn.freeswitchtitle.hook.economy.CurrencyType
 import top.zoyn.freeswitchtitle.hook.permission.PermissionMode
@@ -111,6 +113,50 @@ object ConfigUtils {
     val infoLore: List<String>
         get() = FreeSwitchTitle.guiConfig.getStringList("gui.info.lore")
 
+    val categoryType: XMaterial
+        get() = getGuiMaterial("gui.category.type", "COMPASS")
+
+    val categorySlot: Char
+        get() = (FreeSwitchTitle.guiConfig.getString("gui.category.slot") ?: "C").cchar
+
+    val categoryName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.category.name") ?: "&f分类筛选"
+
+    val categoryLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.category.lore").ifEmpty {
+            listOf("&7当前分类: &f{category}", "&a点击切换分类")
+        }
+
+    val categoryMenuTitle: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.title.category-title") ?: "选择称号分类"
+
+    val categoryAllType: XMaterial
+        get() = getGuiMaterial("gui.category-menu.all.type", "BOOK")
+
+    val categoryAllName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.category-menu.all.name") ?: "&a全部分类"
+
+    val categoryAllLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.category-menu.all.lore").ifEmpty { listOf("&7查看全部称号") }
+
+    val categoryItemType: XMaterial
+        get() = getGuiMaterial("gui.category-menu.item.type", "PAPER")
+
+    val categoryItemName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.category-menu.item.name") ?: "&f{category}"
+
+    val categoryItemLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.category-menu.item.lore").ifEmpty { listOf("&7点击查看该分类") }
+
+    val lockedCollectionType: XMaterial
+        get() = getGuiMaterial("gui.locked-collection.type", "GRAY_DYE")
+
+    val lockedCollectionName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.locked-collection.name") ?: "&8???"
+
+    val lockedCollectionLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.locked-collection.lore").ifEmpty { listOf("&7尚未解锁该称号") }
+
     val previousType: XMaterial
         get() = getGuiMaterial("gui.previous.type")
 
@@ -173,8 +219,8 @@ object ConfigUtils {
         return lore.ifEmpty { fallback }
     }
 
-    fun getGuiMaterial(path: String): XMaterial {
-        val type = FreeSwitchTitle.guiConfig.getString(path) ?: error("gui.yml $path not found")
+    fun getGuiMaterial(path: String, default: String? = null): XMaterial {
+        val type = FreeSwitchTitle.guiConfig.getString(path) ?: default ?: error("gui.yml $path not found")
         return getMaterial(type)
     }
 
@@ -190,9 +236,25 @@ object ConfigUtils {
     fun getTitle(uid: String): String = titleConfig.getString("$uid.title") ?: error("title.yml $uid.title not found")
 
     fun getTitleLore(uid: String): List<String> {
+        val title = getTitle(uid)
+        val category = getTitleCategory(uid)
+        val rarity = getTitleRarity(uid)
         val duration = getTitleDurationText(uid)
+        val vaultPrice = getTitleVaultPrice(uid).toString()
+        val pointsPrice = getTitlePointsPrice(uid).toString()
         return titleConfig.getStringList("$uid.lore")
-            .map { it.replace("{duration}", duration) }
+            .map { line ->
+                line
+                    .replace("{uid}", uid)
+                    .replace("{title}", title)
+                    .replace("{category}", category)
+                    .replace("{rarity}", rarity.name.lowercase())
+                    .replace("{rarity_name}", rarity.displayName)
+                    .replace("{rarity_color}", rarity.color)
+                    .replace("{duration}", duration)
+                    .replace("{vault_price}", vaultPrice)
+                    .replace("{points_price}", pointsPrice)
+            }
     }
 
     fun getTitleJoinMessage(uid: String): String = titleConfig.getString("$uid.join-message") ?: ""
@@ -231,6 +293,75 @@ object ConfigUtils {
         .filter { it.isNotEmpty() }
 
     fun getTitlePermissions(uid: String): List<String> = titleConfig.getStringList("$uid.permission")
+
+    fun getTitleParticleEffect(uid: String): TitleParticleEffect {
+        val path = "$uid.effects.particle"
+        val raw = titleConfig[path]
+        if (raw is String) {
+            return getParticlePreset(raw, uid)
+        }
+        val preset = titleConfig.getString("$path.preset")?.trim().orEmpty()
+        if (preset.isNotEmpty()) {
+            return getParticlePreset(preset, uid)
+        }
+        return readParticleEffectFromTitle(path)
+    }
+
+    private fun getParticlePreset(id: String, uid: String): TitleParticleEffect {
+        val normalized = id.trim()
+        val path = "particles.$normalized"
+        if (normalized.isEmpty() || !FreeSwitchTitle.particleConfig.contains(path)) {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 $uid 引用了不存在的粒子预设: $id")
+            return TitleParticleEffect()
+        }
+        return readParticleEffectFromPreset(path, normalized)
+    }
+
+    private fun readParticleEffectFromTitle(path: String): TitleParticleEffect {
+        return TitleParticleEffect(
+            enabled = titleConfig.getBoolean("$path.enable", false),
+            particle = titleConfig.getString("$path.type") ?: "END_ROD",
+            shape = TitleParticleShape.match(titleConfig.getString("$path.shape")),
+            intervalTicks = titleConfig.getLong("$path.interval", 10L).coerceAtLeast(1L),
+            count = titleConfig.getInt("$path.count", 1).coerceAtLeast(1),
+            radius = titleConfig.getDouble("$path.radius", 0.8).coerceAtLeast(0.0),
+            height = titleConfig.getDouble("$path.height", 0.0),
+            points = titleConfig.getInt("$path.points", 24).coerceAtLeast(3),
+            speed = titleConfig.getDouble("$path.speed", 0.0),
+            offsetX = titleConfig.getDouble("$path.offset.x", 0.0),
+            offsetY = titleConfig.getDouble("$path.offset.y", 0.0),
+            offsetZ = titleConfig.getDouble("$path.offset.z", 0.0),
+        )
+    }
+
+    private fun readParticleEffectFromPreset(path: String, id: String): TitleParticleEffect {
+        return TitleParticleEffect(
+            preset = id,
+            enabled = FreeSwitchTitle.particleConfig.getBoolean("$path.enable", true),
+            particle = FreeSwitchTitle.particleConfig.getString("$path.type") ?: "END_ROD",
+            shape = TitleParticleShape.match(FreeSwitchTitle.particleConfig.getString("$path.shape")),
+            intervalTicks = FreeSwitchTitle.particleConfig.getLong("$path.interval", 10L).coerceAtLeast(1L),
+            count = FreeSwitchTitle.particleConfig.getInt("$path.count", 1).coerceAtLeast(1),
+            radius = FreeSwitchTitle.particleConfig.getDouble("$path.radius", 0.8).coerceAtLeast(0.0),
+            height = FreeSwitchTitle.particleConfig.getDouble("$path.height", 0.0),
+            points = FreeSwitchTitle.particleConfig.getInt("$path.points", 24).coerceAtLeast(3),
+            speed = FreeSwitchTitle.particleConfig.getDouble("$path.speed", 0.0),
+            offsetX = FreeSwitchTitle.particleConfig.getDouble("$path.offset.x", 0.0),
+            offsetY = FreeSwitchTitle.particleConfig.getDouble("$path.offset.y", 0.0),
+            offsetZ = FreeSwitchTitle.particleConfig.getDouble("$path.offset.z", 0.0),
+        )
+    }
+
+    fun getParticlePresetIds(): List<String> {
+        return FreeSwitchTitle.particleConfig.getConfigurationSection("particles")
+            ?.getKeys(false)
+            ?.toList()
+            .orEmpty()
+    }
+
+    fun getParticlePresetForValidation(id: String): TitleParticleEffect {
+        return readParticleEffectFromPreset("particles.$id", id)
+    }
 
     fun getTitleEquipActions(uid: String): List<String> = getTitleActions(uid, "equip")
 

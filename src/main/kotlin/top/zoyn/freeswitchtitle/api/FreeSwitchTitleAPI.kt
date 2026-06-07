@@ -37,6 +37,9 @@ object FreeSwitchTitleAPI {
     fun getCollectionTotal(): Int = TitleUtils.getCollectionTotal()
 
     @JvmStatic
+    fun getCollectionTitleDataList(): List<TitleData> = TitleUtils.getCollectibleTitleDataList()
+
+    @JvmStatic
     fun getPlayerCollectionCount(player: OfflinePlayer): Int = getPlayerCollectionCount(player.uniqueId)
 
     @JvmStatic

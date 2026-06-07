@@ -5,6 +5,7 @@ import taboolib.common.util.replaceWithOrder
 import taboolib.library.xseries.XMaterial
 import taboolib.module.chat.colored
 import taboolib.module.ui.openMenu
+import taboolib.module.ui.type.Chest
 import taboolib.module.ui.type.PageableChest
 import taboolib.platform.compat.replacePlaceholder
 import taboolib.platform.util.buildItem
@@ -57,11 +58,18 @@ object PlayerGui {
                 lore.addAll(ConfigUtils.infoLore.replacePlaceholder(player))
                 colored()
             })
+            set(ConfigUtils.categorySlot, buildItem(ConfigUtils.categoryType) {
+                name = ConfigUtils.categoryName
+                lore.addAll(renderCategoryLore(player, category))
+                colored()
+            }) {
+                openCategoryMenu(player, type, uuid)
+            }
             elements {
                 elements(player, type, uuid, category)
             }
             onGenerate { _, title, _, _ ->
-                title.buildDisplayItem(extraLore(player, title, type, uuid))
+                buildTitleItem(player, title, type, uuid)
             }
             onClick { _, title ->
                 click(player, title, type)
@@ -100,7 +108,7 @@ object PlayerGui {
             PLAYER_LIST -> player.getOwnedTitle()
             TITLE_LIST -> FreeSwitchTitleAPI.getTitleDataList()
             TITLE_SHOP -> if (ConfigUtils.shopEnable) FreeSwitchTitleAPI.getTitleDataList().filter { it.shopEnable && it.isShopAvailableNow() } else emptyList()
-            TITLE_COLLECTION -> FreeSwitchTitleAPI.getVisibleCollectionTitleDataList(player)
+            TITLE_COLLECTION -> FreeSwitchTitleAPI.getCollectionTitleDataList()
             LOOK_PLAYER -> uuid?.getOwnedTitle() ?: emptyList()
         }
         return filterByCategory(titles, category)
@@ -122,7 +130,14 @@ object PlayerGui {
                     player.closeInventory()
                 }
             }
-            TITLE_LIST, LOOK_PLAYER, TITLE_COLLECTION -> player.sendLang("view-only-title")
+            TITLE_COLLECTION -> {
+                if (!FreeSwitchTitleAPI.hasTitle(player, title.uid)) {
+                    player.sendLang("collection-title-locked")
+                    return
+                }
+                player.sendLang("view-only-title")
+            }
+            TITLE_LIST, LOOK_PLAYER -> player.sendLang("view-only-title")
             TITLE_SHOP -> {
                 val result = EconomyManager.purchase(player, title.uid, PurchaseSource.GUI)
                 EconomyManager.sendResult(player, result, title)
@@ -131,6 +146,17 @@ object PlayerGui {
                 }
             }
         }
+    }
+
+    private fun buildTitleItem(player: Player, title: TitleData, type: GuiType, uuid: UUID?): org.bukkit.inventory.ItemStack {
+        if (type == TITLE_COLLECTION && !FreeSwitchTitleAPI.hasTitle(player, title.uid)) {
+            return buildItem(ConfigUtils.lockedCollectionType) {
+                name = renderCollectionLockText(player, player.uniqueId, title, ConfigUtils.lockedCollectionName)
+                lore.addAll(ConfigUtils.lockedCollectionLore.map { renderCollectionLockText(player, player.uniqueId, title, it) })
+                colored()
+            }
+        }
+        return title.buildDisplayItem(extraLore(player, title, type, uuid))
     }
 
     private fun extraLore(player: Player, title: TitleData, type: GuiType, uuid: UUID?): List<String> {
@@ -179,6 +205,50 @@ object PlayerGui {
                 renderLore(player, player.uniqueId, title, "collection.not-owned", listOf("&7状态: 未收集"))
             }
         }
+    }
+
+    private fun openCategoryMenu(player: Player, type: GuiType, uuid: UUID?) {
+        player.openMenu<Chest>(ConfigUtils.categoryMenuTitle.colored()) {
+            rows(3)
+            val categories = listOf("all") + FreeSwitchTitleAPI.getTitleCategoryList()
+            categories.distinct().take(27).forEachIndexed { index, category ->
+                val isAll = category.equals("all", ignoreCase = true)
+                set(index, buildItem(if (isAll) ConfigUtils.categoryAllType else ConfigUtils.categoryItemType) {
+                    name = (if (isAll) ConfigUtils.categoryAllName else ConfigUtils.categoryItemName).replace("{category}", displayCategory(category))
+                    lore.addAll((if (isAll) ConfigUtils.categoryAllLore else ConfigUtils.categoryItemLore).map { it.replace("{category}", displayCategory(category)) })
+                    colored()
+                }) {
+                    openTitleListMenu(player, type, uuid, category)
+                }
+            }
+        }
+    }
+
+    private fun renderCategoryLore(player: Player, category: String?): List<String> {
+        return ConfigUtils.categoryLore
+            .map { it.replace("{category}", displayCategory(category)) }
+            .replacePlaceholder(player)
+            .colored()
+    }
+
+    private fun displayCategory(category: String?): String {
+        val normalized = category?.trim().orEmpty()
+        return if (normalized.isBlank() || normalized.equals("all", ignoreCase = true) || normalized == "*") "全部" else normalized
+    }
+
+    private fun renderCollectionLockText(player: Player, owner: UUID, title: TitleData, line: String): String {
+        return line
+            .replace("{uid}", title.uid)
+            .replace("{category}", title.category)
+            .replace("{rarity}", title.rarity.name.lowercase())
+            .replace("{rarity_name}", title.rarity.displayName)
+            .replace("{rarity_color}", title.rarity.color)
+            .replace("{duration}", title.durationText)
+            .replace("{collected}", FreeSwitchTitleAPI.getPlayerCollectionCount(owner).toString())
+            .replace("{total}", FreeSwitchTitleAPI.getCollectionTotal().toString())
+            .replace("{progress}", FreeSwitchTitleAPI.getPlayerCollectionProgress(owner))
+            .replacePlaceholder(player)
+            .colored()
     }
 
     private fun renderLore(

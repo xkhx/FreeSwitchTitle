@@ -30,6 +30,10 @@ fly:
   permission:
     - essentials.fly
     - essentials.tp
+  # 内置粒子效果：引用 particles.yml 中的预设，佩戴称号时自动启动，卸下/过期/退出时自动停止
+  # 可简写为 particle: halo，也可写成 particle.preset: halo；例如 angel-wings 为翅膀效果；留空或删除 effects 节点则不启用粒子
+  effects:
+    particle: angel-wings
   # 支持动作前缀: [console], [player], [op], [message], [broadcast], [actionbar], [title], [sound], [delay]
   # [delay] 会延迟执行后续动作，支持 20t、2s、500ms、1m；纯数字按 tick 处理
   # 可用变量: {player}, {uuid}, {title}, {uid}, {title_id}, {duration}, {expire}, {price}

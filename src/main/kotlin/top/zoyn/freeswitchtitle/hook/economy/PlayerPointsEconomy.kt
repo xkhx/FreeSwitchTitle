@@ -1,5 +1,6 @@
 package top.zoyn.freeswitchtitle.hook.economy
 
+import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import taboolib.platform.util.bukkitPlugin
 import java.util.UUID
@@ -15,6 +16,10 @@ object PlayerPointsEconomy {
     fun isAvailable(): Boolean = api != null
 
     fun getBalance(player: Player): Int {
+        return getBalance(player as OfflinePlayer)
+    }
+
+    fun getBalance(player: OfflinePlayer): Int {
         return invokeInt("look", player.uniqueId) ?: 0
     }
 

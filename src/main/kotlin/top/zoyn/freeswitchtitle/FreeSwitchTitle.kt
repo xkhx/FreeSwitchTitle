@@ -10,6 +10,7 @@ import taboolib.module.configuration.Config
 import taboolib.module.configuration.ConfigFile
 import taboolib.module.metrics.Metrics
 import taboolib.platform.util.bukkitPlugin
+import top.zoyn.freeswitchtitle.util.TitleBuffManager
 import top.zoyn.freeswitchtitle.util.TitleParticleManager
 import top.zoyn.freeswitchtitle.util.TitleUtils
 
@@ -26,6 +27,9 @@ object FreeSwitchTitle : Plugin() {
     @Config("particles.yml")
     lateinit var particleConfig: ConfigFile
 
+    @Config("effects.yml")
+    lateinit var effectConfig: ConfigFile
+
     override fun onEnable() {
         sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.GOLD}FreeSwitchTitle 启动中...")
         loadPlayerData()
@@ -37,6 +41,7 @@ object FreeSwitchTitle : Plugin() {
     }
 
     override fun onDisable() {
+        TitleBuffManager.clearAll()
         TitleParticleManager.stopAll()
         if (titleExpiryTaskId != -1) {
             bukkitPlugin.server.scheduler.cancelTask(titleExpiryTaskId)
@@ -48,6 +53,7 @@ object FreeSwitchTitle : Plugin() {
         config.reload()
         guiConfig.reload()
         particleConfig.reload()
+        effectConfig.reload()
         TitleUtils.loadTitleData()
     }
 

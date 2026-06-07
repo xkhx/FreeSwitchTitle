@@ -23,6 +23,7 @@ import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_COLLECTION
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_LIST
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_SHOP
 import top.zoyn.freeswitchtitle.util.ConfigUtils
+import top.zoyn.freeswitchtitle.util.TitlePreviewManager
 import top.zoyn.freeswitchtitle.util.TitleUtils
 import top.zoyn.freeswitchtitle.util.getCurrentTitle
 import top.zoyn.freeswitchtitle.util.getOwnedTitle
@@ -139,12 +140,46 @@ object PlayerGui {
             }
             TITLE_LIST, LOOK_PLAYER -> player.sendLang("view-only-title")
             TITLE_SHOP -> {
-                val result = EconomyManager.purchase(player, title.uid, PurchaseSource.GUI)
-                EconomyManager.sendResult(player, result, title)
-                if (result == PurchaseResult.SUCCESS) {
-                    player.closeInventory()
+                if (ConfigUtils.shopConfirmPurchase && !FreeSwitchTitleAPI.hasTitle(player, title.uid)) {
+                    openPurchaseConfirmMenu(player, title)
+                    return
                 }
+                purchase(player, title)
             }
+        }
+    }
+
+    private fun openPurchaseConfirmMenu(player: Player, title: TitleData) {
+        player.openMenu<Chest>(replaceTitlePlaceholders(player, title, ConfigUtils.confirmTitle).colored()) {
+            rows(ConfigUtils.confirmRows)
+            set(ConfigUtils.confirmInfoSlot, buildItem(ConfigUtils.confirmInfoType) {
+                name = replaceTitlePlaceholders(player, title, ConfigUtils.confirmInfoName)
+                lore.addAll(ConfigUtils.confirmInfoLore.map { replaceTitlePlaceholders(player, title, it) })
+                colored()
+            })
+            set(ConfigUtils.confirmYesSlot, buildItem(ConfigUtils.confirmYesType) {
+                name = replaceTitlePlaceholders(player, title, ConfigUtils.confirmYesName)
+                lore.addAll(ConfigUtils.confirmYesLore.map { replaceTitlePlaceholders(player, title, it) })
+                colored()
+            }) {
+                purchase(player, title)
+            }
+            set(ConfigUtils.confirmNoSlot, buildItem(ConfigUtils.confirmNoType) {
+                name = replaceTitlePlaceholders(player, title, ConfigUtils.confirmNoName)
+                lore.addAll(ConfigUtils.confirmNoLore.map { replaceTitlePlaceholders(player, title, it) })
+                colored()
+            }) {
+                player.closeInventory()
+                player.sendLang("purchase-confirm-cancelled")
+            }
+        }
+    }
+
+    private fun purchase(player: Player, title: TitleData) {
+        val result = EconomyManager.purchase(player, title.uid, PurchaseSource.GUI)
+        EconomyManager.sendResult(player, result, title)
+        if (result == PurchaseResult.SUCCESS) {
+            player.closeInventory()
         }
     }
 
@@ -249,6 +284,35 @@ object PlayerGui {
             .replace("{progress}", FreeSwitchTitleAPI.getPlayerCollectionProgress(owner))
             .replacePlaceholder(player)
             .colored()
+    }
+
+    private fun replaceTitlePlaceholders(player: Player, title: TitleData, line: String): String {
+        return line
+            .replace("{uid}", title.uid)
+            .replace("{title}", title.title)
+            .replace("{category}", title.category)
+            .replace("{rarity}", title.rarity.name.lowercase())
+            .replace("{rarity_name}", title.rarity.displayName)
+            .replace("{rarity_color}", title.rarity.color)
+            .replace("{duration}", title.durationText)
+            .replace("{expire}", TitleUtils.getTitleExpireText(player.uniqueId, title))
+            .replace("{price}", formatPrice(title))
+            .replace("{vault_price}", title.vaultPrice.toString())
+            .replace("{points_price}", title.pointsPrice.toString())
+            .replace("{particle}", title.particleEffect.preset.ifBlank { if (title.particleEffect.enabled) title.particleEffect.particle else "无" })
+            .replace("{potion}", title.buffEffect.potionPreset.ifBlank { "无" })
+            .replace("{attribute}", title.buffEffect.attributePreset.ifBlank { "无" })
+            .replacePlaceholder(player)
+            .colored()
+    }
+
+    private fun formatPrice(title: TitleData): String {
+        return when (title.shopCurrency) {
+            CurrencyType.VAULT -> "金币 ${title.vaultPrice}"
+            CurrencyType.PLAYER_POINTS -> "点券 ${title.pointsPrice}"
+            CurrencyType.BOTH -> "金币 ${title.vaultPrice} + 点券 ${title.pointsPrice}"
+            CurrencyType.FREE -> "免费"
+        }
     }
 
     private fun renderLore(

@@ -1,0 +1,41 @@
+# 药水与属性效果预设配置
+# 称号中可通过 effects.potion: <预设名>、effects.attribute: <预设名> 引用
+
+potions:
+  speed:
+    effects:
+      SPEED:
+        amplifier: 1
+        ambient: true
+        particles: false
+        icon: true
+
+  night-vision:
+    effects:
+      NIGHT_VISION:
+        amplifier: 0
+        ambient: true
+        particles: false
+        icon: true
+
+  fire-immune:
+    effects:
+      FIRE_RESISTANCE:
+        amplifier: 0
+        ambient: true
+        particles: false
+        icon: true
+
+attributes:
+  warrior:
+    GENERIC_MAX_HEALTH:
+      amount: 4.0
+      operation: ADD_NUMBER
+    GENERIC_ATTACK_DAMAGE:
+      amount: 2.0
+      operation: ADD_NUMBER
+
+  swift:
+    GENERIC_MOVEMENT_SPEED:
+      amount: 0.05
+      operation: ADD_SCALAR

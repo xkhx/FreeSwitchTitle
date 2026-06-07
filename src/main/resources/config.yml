@@ -25,6 +25,16 @@ shop:
   currency: VAULT
   # 是否记录购买成功/失败日志到 purchase-logs.yml
   log-purchases: true
+  # 商城点击称号时是否先打开确认购买界面
+  confirm-purchase: true
+
+# 称号预览
+preview:
+  enable: true
+  # 预览持续时间，支持 10s、1m 等
+  duration: 10s
+  # 预览冷却时间
+  cooldown: 5s
 
 # 称号图鉴与收藏奖励
 collection:

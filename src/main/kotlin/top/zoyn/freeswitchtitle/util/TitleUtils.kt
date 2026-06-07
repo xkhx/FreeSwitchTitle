@@ -86,6 +86,7 @@ object TitleUtils {
             requiredPermissions = ConfigUtils.getTitleRequiredPermissions(uid),
             permissions = ConfigUtils.getTitlePermissions(uid),
             particleEffect = ConfigUtils.getTitleParticleEffect(uid),
+            buffEffect = ConfigUtils.getTitleBuffEffect(uid),
             equipActions = ConfigUtils.getTitleEquipActions(uid),
             unequipActions = ConfigUtils.getTitleUnequipActions(uid),
             buyActions = ConfigUtils.getTitleBuyActions(uid),
@@ -308,10 +309,13 @@ object TitleUtils {
                     PermissionGrantStore.unmarkGranted(uuid, it.uid, permission)
                 }
             PermissionManager.revoke(player, it, retainedPermissions)
+            TitleBuffManager.clear(player)
+            TitleParticleManager.stop(player)
             TitleEffectUtils.runUnequip(player, it)
             callEvent(TitleUnequipEvent(player, it, "SWITCH"))
         }
         uuid.getPlayerDataContainer()[USING_KEY] = uid
+        TitleBuffManager.apply(player, title)
         TitleParticleManager.start(player, title)
         TitleEffectUtils.runEquip(player, title)
         return TitleOperationResult.SUCCESS
@@ -330,6 +334,7 @@ object TitleUtils {
         val player = onlinePlayers.firstOrNull { it.uniqueId == uuid }
         if (player != null) {
             PermissionManager.revoke(player, title)
+            TitleBuffManager.clear(player)
             TitleParticleManager.stop(player)
             TitleEffectUtils.runUnequip(player, title)
             TitleEffectUtils.runReset(player, title)

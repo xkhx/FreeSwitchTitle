@@ -34,6 +34,8 @@ BUILD SUCCESSFUL
 - `/fst validate` 配置检查命令
 - 称号内置粒子效果：HALO、RING、AURA、SPIRAL、TRAIL、WINGS
 - 独立 `particles.yml` 粒子预设配置，称号可复用预设
+- 独立 `effects.yml` 药水/属性预设配置，称号可复用增益效果
+- `/fst preview <uid>` 称号粒子预览与商城购买确认 GUI
 
 ## 已完成并推送的功能
 
@@ -379,6 +381,13 @@ plugins/PlaceholderAPI-2.11.6.jar
 - `particles.yml` 已内置 `angel-wings` 翅膀预设，可直接在称号中使用 `effects.particle: angel-wings`。
 - `/fst show <uid>` 会显示称号粒子预设/类型/形状，`/fst validate` 会检查 `particles.yml` 与称号粒子配置中的粒子类型是否合法。
 - 该方案不依赖 PlayerParticles；项目已安装 TabooLib `MinecraftEffect` 环境模块，当前实现使用 Bukkit 原生粒子生成，后续可基于 `minecraft-effect` 扩展更复杂形状。
+- 已新增独立 `effects.yml`，支持 `potions` 药水效果预设和 `attributes` 属性效果预设。
+- 称号可通过 `effects.potion: <预设名>`、`effects.attribute: <预设名>` 引用预设，也可通过 `effects.potions`、`effects.attributes` 内联覆盖。
+- 药水/属性效果会在佩戴和上线时应用，在切换、卸下、过期、退出和插件关闭时清理。
+- `/fst show <uid>` 会显示增益预设，`/fst validate` 会检查药水类型和属性类型是否合法。
+- 已新增 `/fst preview <uid>`，可临时预览称号粒子效果，不改变当前称号、不发放权限、不应用药水/属性。
+- 已新增 `preview.enable`、`preview.duration`、`preview.cooldown` 配置，并在退出时自动清理预览。
+- 商城点击称号时可通过 `shop.confirm-purchase` 打开购买确认 GUI，点击确认后才扣费购买，点击取消不会扣费。
 
 ## 尚未完成
 

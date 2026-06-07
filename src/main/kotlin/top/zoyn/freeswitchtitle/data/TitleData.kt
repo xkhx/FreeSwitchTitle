@@ -26,6 +26,7 @@ data class TitleData(
     val requiredPermissions: List<String>,
     val permissions: List<String>,
     val particleEffect: TitleParticleEffect,
+    val buffEffect: TitleBuffEffect,
     val equipActions: List<String>,
     val unequipActions: List<String>,
     val buyActions: List<String>,

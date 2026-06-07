@@ -19,6 +19,8 @@ object TitleParticleManager {
 
     private val tasks = mutableMapOf<UUID, BukkitTask>()
     private val ticks = mutableMapOf<UUID, Int>()
+    private val previewTasks = mutableMapOf<UUID, BukkitTask>()
+    private val previewTicks = mutableMapOf<UUID, Int>()
 
     fun start(player: Player, title: TitleData) {
         stop(player.uniqueId)
@@ -44,6 +46,42 @@ object TitleParticleManager {
         )
     }
 
+    fun startPreview(player: Player, title: TitleData, durationTicks: Long, onEnd: () -> Unit = {}) {
+        stopPreview(player.uniqueId)
+        val effect = title.particleEffect
+        if (!effect.enabled) return
+        val particle = parseParticle(effect.particle) ?: run {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 ${title.uid} 的预览粒子类型无效: ${effect.particle}")
+            return
+        }
+        var remain = durationTicks.coerceAtLeast(1L)
+        previewTicks[player.uniqueId] = 0
+        previewTasks[player.uniqueId] = bukkitPlugin.server.scheduler.runTaskTimer(
+            bukkitPlugin,
+            Runnable {
+                if (!player.isOnline || remain <= 0L) {
+                    stopPreview(player.uniqueId)
+                    onEnd()
+                    return@Runnable
+                }
+                remain -= effect.intervalTicks
+                val tick = previewTicks.compute(player.uniqueId) { _, value -> (value ?: 0) + 1 } ?: 1
+                spawn(player, effect, particle, tick)
+            },
+            0L,
+            effect.intervalTicks
+        )
+    }
+
+    fun stopPreview(player: Player) {
+        stopPreview(player.uniqueId)
+    }
+
+    fun stopPreview(uuid: UUID) {
+        previewTasks.remove(uuid)?.cancel()
+        previewTicks.remove(uuid)
+    }
+
     fun stop(player: Player) {
         stop(player.uniqueId)
     }
@@ -55,8 +93,11 @@ object TitleParticleManager {
 
     fun stopAll() {
         tasks.values.forEach { it.cancel() }
+        previewTasks.values.forEach { it.cancel() }
         tasks.clear()
         ticks.clear()
+        previewTasks.clear()
+        previewTicks.clear()
     }
 
     private fun parseParticle(name: String): Particle? {

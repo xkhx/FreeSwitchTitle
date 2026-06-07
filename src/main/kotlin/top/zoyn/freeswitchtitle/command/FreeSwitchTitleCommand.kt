@@ -1,7 +1,9 @@
 package top.zoyn.freeswitchtitle.command
 
 import org.bukkit.Particle
+import org.bukkit.attribute.Attribute
 import org.bukkit.command.CommandSender
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.entity.Player
 import taboolib.common.platform.command.CommandBody
 import taboolib.common.platform.command.CommandHeader
@@ -21,6 +23,7 @@ import top.zoyn.freeswitchtitle.hook.economy.PlayerPointsEconomy
 import top.zoyn.freeswitchtitle.hook.economy.PurchaseSource
 import top.zoyn.freeswitchtitle.hook.economy.VaultEconomy
 import top.zoyn.freeswitchtitle.util.ConfigUtils
+import top.zoyn.freeswitchtitle.util.TitlePreviewManager
 import top.zoyn.freeswitchtitle.util.addTitle
 import top.zoyn.freeswitchtitle.util.openTitleListMenu
 import top.zoyn.freeswitchtitle.util.removeTitle
@@ -151,6 +154,23 @@ object FreeSwitchTitleCommand {
                 val title = FreeSwitchTitleAPI.getTitle(uid)
                 val result = EconomyManager.purchase(sender, uid, PurchaseSource.COMMAND)
                 EconomyManager.sendResult(sender, result, title)
+            }
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.preview", permissionDefault = PermissionDefault.TRUE, description = "@command-description-preview")
+    val preview = subCommand {
+        dynamic("uid") {
+            suggestionUncheck<Player> { _, _ ->
+                FreeSwitchTitleAPI.getTitleUidList()
+            }
+            execute<Player> { sender, context, _ ->
+                val uid = context["uid"]
+                val title = FreeSwitchTitleAPI.getTitle(uid) ?: run {
+                    sender.sendLang("preview-title-not-found")
+                    return@execute
+                }
+                TitlePreviewManager.preview(sender, title)
             }
         }
     }
@@ -334,6 +354,7 @@ object FreeSwitchTitleCommand {
         sender.sendLang("show-title-line-permissions", title.permissions.joinToString(", ").ifBlank { "无" })
         sender.sendLang("show-title-line-requirements", title.requiredPermissions.joinToString(", ").ifBlank { "无" })
         sender.sendLang("show-title-line-particle", formatParticle(title))
+        sender.sendLang("show-title-line-buff", formatBuff(title))
         sender.sendLang("show-title-line-actions", title.equipActions.size, title.unequipActions.size, title.buyActions.size, title.expireActions.size)
         sender.sendLang("show-title-footer")
     }
@@ -354,8 +375,24 @@ object FreeSwitchTitleCommand {
         return "$preset / ${effect.particle} / ${effect.shape.name}"
     }
 
+    private fun formatBuff(title: TitleData): String {
+        val effect = title.buffEffect
+        if (!effect.enabled) return "无"
+        val potion = effect.potionPreset.ifBlank { if (effect.potions.isNotEmpty()) "内联药水" else "" }
+        val attribute = effect.attributePreset.ifBlank { if (effect.attributes.isNotEmpty()) "内联属性" else "" }
+        return listOf(potion, attribute).filter { it.isNotBlank() }.joinToString(" / ")
+    }
+
     private fun isValidParticle(name: String): Boolean {
         return runCatching { Particle.valueOf(name.trim().uppercase()) }.isSuccess
+    }
+
+    private fun isValidPotion(name: String): Boolean {
+        return PotionEffectType.getByName(name.trim().uppercase()) != null
+    }
+
+    private fun isValidAttribute(name: String): Boolean {
+        return runCatching { Attribute.valueOf(name.trim().uppercase()) }.isSuccess
     }
 
     private fun sendValidationReport(sender: CommandSender) {
@@ -384,6 +421,12 @@ object FreeSwitchTitleCommand {
             title.requiredPermissions.filter { it.isBlank() }.forEach { _ -> warnings += "${title.uid}: requirements.permissions 中存在空权限节点" }
             if (title.particleEffect.enabled && !isValidParticle(title.particleEffect.particle)) {
                 errors += "${title.uid}: 粒子类型不存在: ${title.particleEffect.particle}"
+            }
+            title.buffEffect.potions.forEach { effect ->
+                if (!isValidPotion(effect.type)) errors += "${title.uid}: 药水效果不存在: ${effect.type}"
+            }
+            title.buffEffect.attributes.forEach { effect ->
+                if (!isValidAttribute(effect.attribute)) errors += "${title.uid}: 属性效果不存在: ${effect.attribute}"
             }
         }
         ConfigUtils.getParticlePresetIds().forEach { presetId ->

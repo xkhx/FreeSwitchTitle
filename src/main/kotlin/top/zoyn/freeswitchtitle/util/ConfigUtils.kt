@@ -3,8 +3,12 @@ package top.zoyn.freeswitchtitle.util
 import taboolib.common5.cchar
 import taboolib.library.xseries.XMaterial
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
+import top.zoyn.freeswitchtitle.data.TitleAttributeEffect
+import top.zoyn.freeswitchtitle.data.TitleAttributeOperation
+import top.zoyn.freeswitchtitle.data.TitleBuffEffect
 import top.zoyn.freeswitchtitle.data.TitleParticleEffect
 import top.zoyn.freeswitchtitle.data.TitleParticleShape
+import top.zoyn.freeswitchtitle.data.TitlePotionEffect
 import top.zoyn.freeswitchtitle.data.TitleRarity
 import top.zoyn.freeswitchtitle.hook.economy.CurrencyType
 import top.zoyn.freeswitchtitle.hook.permission.PermissionMode
@@ -32,6 +36,18 @@ object ConfigUtils {
 
     val shopLogPurchases: Boolean
         get() = FreeSwitchTitle.config.getBoolean("shop.log-purchases", true)
+
+    val shopConfirmPurchase: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("shop.confirm-purchase", true)
+
+    val previewEnable: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("preview.enable", true)
+
+    val previewDurationMillis: Long
+        get() = TitleDurationUtils.parse(FreeSwitchTitle.config.getString("preview.duration") ?: "10s").takeIf { it > 0L } ?: 10_000L
+
+    val previewCooldownMillis: Long
+        get() = TitleDurationUtils.parse(FreeSwitchTitle.config.getString("preview.cooldown") ?: "5s").takeIf { it > 0L } ?: 5_000L
 
     val collectionRewards: Map<Int, List<String>>
         get() {
@@ -156,6 +172,50 @@ object ConfigUtils {
 
     val lockedCollectionLore: List<String>
         get() = FreeSwitchTitle.guiConfig.getStringList("gui.locked-collection.lore").ifEmpty { listOf("&7尚未解锁该称号") }
+
+    val confirmTitle: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.confirm.title") ?: "确认购买 {title}"
+
+    val confirmRows: Int
+        get() = FreeSwitchTitle.guiConfig.getInt("gui.confirm.rows", 3).coerceIn(1, 6)
+
+    val confirmInfoType: XMaterial
+        get() = getGuiMaterial("gui.confirm.info.type", "BOOK")
+
+    val confirmInfoSlot: Int
+        get() = FreeSwitchTitle.guiConfig.getInt("gui.confirm.info.slot", 13).coerceIn(0, 53)
+
+    val confirmInfoName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.confirm.info.name") ?: "&f{title}"
+
+    val confirmInfoLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.confirm.info.lore").ifEmpty {
+            listOf("&7价格: &f{price}", "&7期限: &f{duration}", "&7左侧确认，右侧取消")
+        }
+
+    val confirmYesType: XMaterial
+        get() = getGuiMaterial("gui.confirm.yes.type", "LIME_STAINED_GLASS_PANE")
+
+    val confirmYesSlot: Int
+        get() = FreeSwitchTitle.guiConfig.getInt("gui.confirm.yes.slot", 11).coerceIn(0, 53)
+
+    val confirmYesName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.confirm.yes.name") ?: "&a确认购买"
+
+    val confirmYesLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.confirm.yes.lore").ifEmpty { listOf("&7点击确认购买") }
+
+    val confirmNoType: XMaterial
+        get() = getGuiMaterial("gui.confirm.no.type", "RED_STAINED_GLASS_PANE")
+
+    val confirmNoSlot: Int
+        get() = FreeSwitchTitle.guiConfig.getInt("gui.confirm.no.slot", 15).coerceIn(0, 53)
+
+    val confirmNoName: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.confirm.no.name") ?: "&c取消"
+
+    val confirmNoLore: List<String>
+        get() = FreeSwitchTitle.guiConfig.getStringList("gui.confirm.no.lore").ifEmpty { listOf("&7点击取消购买") }
 
     val previousType: XMaterial
         get() = getGuiMaterial("gui.previous.type")
@@ -361,6 +421,79 @@ object ConfigUtils {
 
     fun getParticlePresetForValidation(id: String): TitleParticleEffect {
         return readParticleEffectFromPreset("particles.$id", id)
+    }
+
+    fun getTitleBuffEffect(uid: String): TitleBuffEffect {
+        val potionPreset = titleConfig.getString("$uid.effects.potion")?.trim().orEmpty()
+        val attributePreset = titleConfig.getString("$uid.effects.attribute")?.trim().orEmpty()
+        return TitleBuffEffect(
+            potionPreset = potionPreset,
+            attributePreset = attributePreset,
+            potions = readPotionPreset(potionPreset, uid) + readInlinePotions(uid),
+            attributes = readAttributePreset(attributePreset, uid) + readInlineAttributes(uid),
+        )
+    }
+
+    private fun readPotionPreset(id: String, uid: String): List<TitlePotionEffect> {
+        if (id.isBlank()) return emptyList()
+        val path = "potions.$id.effects"
+        if (!FreeSwitchTitle.effectConfig.contains(path)) {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 $uid 引用了不存在的药水效果预设: $id")
+            return emptyList()
+        }
+        return readPotions(path)
+    }
+
+    private fun readInlinePotions(uid: String): List<TitlePotionEffect> {
+        return readPotions("$uid.effects.potions")
+    }
+
+    private fun readPotions(path: String): List<TitlePotionEffect> {
+        val config = if (path.startsWith("potions.")) FreeSwitchTitle.effectConfig else titleConfig
+        val section = config.getConfigurationSection(path) ?: return emptyList()
+        return section.getKeys(false).map { type ->
+            TitlePotionEffect(
+                type = type,
+                amplifier = config.getInt("$path.$type.amplifier", 0).coerceAtLeast(0),
+                ambient = config.getBoolean("$path.$type.ambient", true),
+                particles = config.getBoolean("$path.$type.particles", false),
+                icon = config.getBoolean("$path.$type.icon", true),
+            )
+        }
+    }
+
+    private fun readAttributePreset(id: String, uid: String): List<TitleAttributeEffect> {
+        if (id.isBlank()) return emptyList()
+        val path = "attributes.$id"
+        if (!FreeSwitchTitle.effectConfig.contains(path)) {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 $uid 引用了不存在的属性效果预设: $id")
+            return emptyList()
+        }
+        return readAttributes(path)
+    }
+
+    private fun readInlineAttributes(uid: String): List<TitleAttributeEffect> {
+        return readAttributes("$uid.effects.attributes")
+    }
+
+    private fun readAttributes(path: String): List<TitleAttributeEffect> {
+        val config = if (path.startsWith("attributes.")) FreeSwitchTitle.effectConfig else titleConfig
+        val section = config.getConfigurationSection(path) ?: return emptyList()
+        return section.getKeys(false).map { attribute ->
+            TitleAttributeEffect(
+                attribute = attribute,
+                amount = config.getDouble("$path.$attribute.amount", 0.0),
+                operation = TitleAttributeOperation.match(config.getString("$path.$attribute.operation")),
+            )
+        }
+    }
+
+    fun getPotionPresetIds(): List<String> {
+        return FreeSwitchTitle.effectConfig.getConfigurationSection("potions")?.getKeys(false)?.toList().orEmpty()
+    }
+
+    fun getAttributePresetIds(): List<String> {
+        return FreeSwitchTitle.effectConfig.getConfigurationSection("attributes")?.getKeys(false)?.toList().orEmpty()
     }
 
     fun getTitleEquipActions(uid: String): List<String> = getTitleActions(uid, "equip")

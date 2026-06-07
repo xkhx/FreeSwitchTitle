@@ -65,6 +65,31 @@ gui:
       - "&7稀有度: {rarity_color}{rarity_name}"
       - "&7收藏进度: &f{collected}/{total} &7({progress})"
 
+  # 购买确认界面
+  confirm:
+    title: "确认购买 {title}"
+    rows: 3
+    info:
+      type: BOOK
+      slot: 13
+      name: "&f{title}"
+      lore:
+        - "&7价格: &f{price}"
+        - "&7期限: &f{duration}"
+        - "&7稀有度: {rarity_color}{rarity_name}"
+    yes:
+      type: LIME_STAINED_GLASS_PANE
+      slot: 11
+      name: "&a确认购买"
+      lore:
+        - "&7点击确认购买"
+    no:
+      type: RED_STAINED_GLASS_PANE
+      slot: 15
+      name: "&c取消"
+      lore:
+        - "&7点击取消购买"
+
   # 上一页
   previous:
     type: SPECTRAL_ARROW
@@ -114,6 +139,7 @@ gui:
       buy:
         - '&a点击购买'
         - '&7称号期限: &f{duration}'
+        - '&7预览命令: &f/fst preview {uid}'
       vault-price:
         - '&6金币价格: {0}'
       points-price:

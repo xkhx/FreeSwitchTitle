@@ -490,6 +490,70 @@
 
 ---
 
+## M10：图片称号与资源包
+
+### 目标
+
+让称号可以不仅显示文字，还能通过资源包图片显示在玩家头顶，适合 VIP、活动、成就、赛季等高辨识度称号。
+
+### 已完成功能
+
+1. 头顶显示
+   - 已基于 Bukkit `TextDisplay` 实体实现玩家头顶显示。
+   - 已支持 `display.enable`、`display.y-offset`、`display.scale`、`display.shadow`、`display.see-through`。
+   - 已接入佩戴、切换、卸下、过期、退出、reload、disable 生命周期。
+
+2. 手动资源包字符
+   - 已支持 `display.text: '\\uE001'`。
+   - 插件会将 `\\uE001` 解析为真实 Unicode 字符。
+
+3. 自动图片资源包
+   - 已支持 `display.image: vip.png`。
+   - 已自动扫描 `plugins/FreeSwitchTitle/images/*.png`。
+   - 已自动生成 `resourcepack/` 与 `resourcepack.zip`。
+   - 已自动生成 `assets/minecraft/font/default.json` bitmap provider。
+   - 已自动计算并输出 SHA1。
+
+4. 配置检查
+   - `/fst validate` 已检查图片文件名合法性。
+   - `/fst validate` 已检查图片是否存在。
+   - `/fst validate` 已检查 display text/image、scale、y-offset。
+
+### 当前限制
+
+- 插件目前只生成资源包，不内置 HTTP 服务。
+- 需要服主自行上传资源包或配置 `server.properties`。
+- 自动 glyph 分配按图片文件名排序，新增/删除/重命名图片可能改变映射。
+- 所有图片共用全局 `default-height` 与 `default-ascent`。
+
+### 后续增强建议
+
+1. 稳定映射
+   - 新增 `image-mapping.yml`。
+   - 固定每张图片对应的 Unicode 字符。
+   - 避免新增或删除图片导致旧称号错图。
+
+2. 单图字体参数
+   - 支持每张图片独立配置 `height` 与 `ascent`。
+   - 解决不同尺寸图片显示高度不一致的问题。
+
+3. 自动下发资源包
+   - 可选内置 HTTP 服务托管 `resourcepack.zip`。
+   - 玩家进服时调用 Bukkit API 下发资源包。
+   - 配置 `public-url`、`required`、`prompt`。
+
+4. 图片称号预览
+   - 新增 `/fst previewdisplay <uid>` 或扩展 `/fst preview <uid>` 同时预览图片显示。
+
+### 验收标准
+
+- 放入 PNG 后 `/fst reload` 能生成资源包。
+- 称号配置 `display.image` 后佩戴能显示头顶图片。
+- 玩家加载资源包后看到图片而不是占位字符。
+- 卸下、切换、退出、过期后显示实体能正确清理。
+
+---
+
 ## 推荐新功能优先级
 
 1. GUI 分页 + 分类

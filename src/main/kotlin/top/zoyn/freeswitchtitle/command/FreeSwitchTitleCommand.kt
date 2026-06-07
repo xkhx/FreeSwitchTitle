@@ -23,6 +23,7 @@ import top.zoyn.freeswitchtitle.hook.economy.PlayerPointsEconomy
 import top.zoyn.freeswitchtitle.hook.economy.PurchaseSource
 import top.zoyn.freeswitchtitle.hook.economy.VaultEconomy
 import top.zoyn.freeswitchtitle.util.ConfigUtils
+import top.zoyn.freeswitchtitle.util.TitleImageFontManager
 import top.zoyn.freeswitchtitle.util.TitlePreviewManager
 import top.zoyn.freeswitchtitle.util.addTitle
 import top.zoyn.freeswitchtitle.util.openTitleListMenu
@@ -439,6 +440,24 @@ object FreeSwitchTitleCommand {
             }
             title.permissions.filter { it.isBlank() }.forEach { _ -> warnings += "${title.uid}: permission 中存在空权限节点" }
             title.requiredPermissions.filter { it.isBlank() }.forEach { _ -> warnings += "${title.uid}: requirements.permissions 中存在空权限节点" }
+            if (title.displayEffect.enabled) {
+                if (title.displayEffect.image.isBlank() && title.displayEffect.text.isBlank()) {
+                    errors += "${title.uid}: display.enable 为 true 时 display.image 或 display.text 至少填写一个"
+                }
+                if (title.displayEffect.image.isNotBlank()) {
+                    if (!TitleImageFontManager.isValidImageName(title.displayEffect.image)) {
+                        errors += "${title.uid}: display.image 文件名非法，仅允许 png 文件名包含字母、数字、_、-、."
+                    } else if (!TitleImageFontManager.hasImage(title.displayEffect.image)) {
+                        errors += "${title.uid}: display.image 图片不存在: ${title.displayEffect.image}，请放入 ${TitleImageFontManager.getImageFolder().absolutePath}"
+                    }
+                }
+                if (title.displayEffect.scale <= 0.0f) {
+                    errors += "${title.uid}: display.scale 必须大于 0"
+                }
+                if (title.displayEffect.yOffset < 0.5 || title.displayEffect.yOffset > 5.0) {
+                    warnings += "${title.uid}: display.y-offset 建议保持在 0.5 到 5.0 之间"
+                }
+            }
             if (title.particleEffect.preset.isNotBlank() && !ConfigUtils.hasParticlePreset(title.particleEffect.preset)) {
                 errors += "${title.uid}: 粒子预设不存在: ${title.particleEffect.preset}"
             }

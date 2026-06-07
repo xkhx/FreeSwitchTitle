@@ -12,6 +12,8 @@ import taboolib.module.metrics.Metrics
 import taboolib.platform.util.bukkitPlugin
 import top.zoyn.freeswitchtitle.util.ConfigMigrationUtils
 import top.zoyn.freeswitchtitle.util.TitleBuffManager
+import top.zoyn.freeswitchtitle.util.TitleDisplayManager
+import top.zoyn.freeswitchtitle.util.TitleImageFontManager
 import top.zoyn.freeswitchtitle.util.TitleParticleManager
 import top.zoyn.freeswitchtitle.util.TitlePreviewManager
 import top.zoyn.freeswitchtitle.util.TitleUtils
@@ -47,6 +49,7 @@ object FreeSwitchTitle : Plugin() {
 
     override fun onDisable() {
         TitlePreviewManager.stopAll()
+        TitleDisplayManager.stopAll()
         TitleBuffManager.clearAll()
         TitleParticleManager.stopAll()
         if (titleExpiryTaskId != -1) {
@@ -63,6 +66,7 @@ object FreeSwitchTitle : Plugin() {
         reloadConfigFiles()
         ConfigMigrationUtils.migrateAll()
         reloadConfigFiles()
+        TitleImageFontManager.reload()
         TitleUtils.loadTitleData()
         refreshOnlineTitleEffects()
     }
@@ -83,9 +87,11 @@ object FreeSwitchTitle : Plugin() {
         bukkitPlugin.server.onlinePlayers.forEach { player ->
             TitleBuffManager.clear(player)
             TitleParticleManager.stop(player)
+            TitleDisplayManager.stop(player)
             player.getCurrentTitle()?.let { title ->
                 TitleBuffManager.apply(player, title)
                 TitleParticleManager.start(player, title)
+                TitleDisplayManager.start(player, title)
             }
         }
     }

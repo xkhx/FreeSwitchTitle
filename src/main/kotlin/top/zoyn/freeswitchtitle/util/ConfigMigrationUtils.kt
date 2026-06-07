@@ -30,6 +30,19 @@ object ConfigMigrationUtils {
         changed = setIfMissing(FreeSwitchTitle.config, "preview.enable", true) || changed
         changed = setIfMissing(FreeSwitchTitle.config, "preview.duration", "10s") || changed
         changed = setIfMissing(FreeSwitchTitle.config, "preview.cooldown", "5s") || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.enable", true) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.update-interval", 2) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.default-y-offset", 2.55) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.default-scale", 1.0) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.default-shadow", false) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.default-see-through", false) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.enable", true) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.image-folder", "images") || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.output-folder", "resourcepack") || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.namespace", "freeswitchtitle") || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.start-codepoint", "0xE001") || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.default-height", 16) || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.default-ascent", 8) || changed
         if (FreeSwitchTitle.config.getInt("config-version", 1) < CURRENT_CONFIG_VERSION) {
             FreeSwitchTitle.config["config-version"] = CURRENT_CONFIG_VERSION
             changed = true

@@ -6,6 +6,7 @@ import top.zoyn.freeswitchtitle.FreeSwitchTitle
 import top.zoyn.freeswitchtitle.data.TitleAttributeEffect
 import top.zoyn.freeswitchtitle.data.TitleAttributeOperation
 import top.zoyn.freeswitchtitle.data.TitleBuffEffect
+import top.zoyn.freeswitchtitle.data.TitleDisplayEffect
 import top.zoyn.freeswitchtitle.data.TitleParticleEffect
 import top.zoyn.freeswitchtitle.data.TitleParticleShape
 import top.zoyn.freeswitchtitle.data.TitlePotionEffect
@@ -48,6 +49,45 @@ object ConfigUtils {
 
     val previewCooldownMillis: Long
         get() = TitleDurationUtils.parse(FreeSwitchTitle.config.getString("preview.cooldown") ?: "5s").takeIf { it > 0L } ?: 5_000L
+
+    val displayEnable: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("display.enable", true)
+
+    val displayUpdateIntervalTicks: Long
+        get() = FreeSwitchTitle.config.getLong("display.update-interval", 2L).coerceAtLeast(1L)
+
+    val displayDefaultYOffset: Double
+        get() = FreeSwitchTitle.config.getDouble("display.default-y-offset", 2.55)
+
+    val displayDefaultScale: Float
+        get() = FreeSwitchTitle.config.getDouble("display.default-scale", 1.0).toFloat().coerceAtLeast(0.01f)
+
+    val displayDefaultShadow: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("display.default-shadow", false)
+
+    val displayDefaultSeeThrough: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("display.default-see-through", false)
+
+    val displayResourcePackEnable: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("display.resource-pack.enable", true)
+
+    val displayImageFolder: String
+        get() = FreeSwitchTitle.config.getString("display.resource-pack.image-folder") ?: "images"
+
+    val displayResourcePackOutputFolder: String
+        get() = FreeSwitchTitle.config.getString("display.resource-pack.output-folder") ?: "resourcepack"
+
+    val displayResourcePackNamespace: String
+        get() = FreeSwitchTitle.config.getString("display.resource-pack.namespace") ?: "freeswitchtitle"
+
+    val displayResourcePackStartCodepoint: Int
+        get() = parseCodepoint(FreeSwitchTitle.config.getString("display.resource-pack.start-codepoint") ?: "0xE001")
+
+    val displayResourcePackDefaultHeight: Int
+        get() = FreeSwitchTitle.config.getInt("display.resource-pack.default-height", 16).coerceAtLeast(1)
+
+    val displayResourcePackDefaultAscent: Int
+        get() = FreeSwitchTitle.config.getInt("display.resource-pack.default-ascent", 8).coerceAtLeast(0)
 
     val collectionRewards: Map<Int, List<String>>
         get() {
@@ -288,6 +328,21 @@ object ConfigUtils {
         return XMaterial.matchXMaterial(type).getOrNull() ?: error("Material $type not found")
     }
 
+    private fun decodeUnicodeEscapes(text: String): String {
+        return Regex("\\\\u([0-9a-fA-F]{4})").replace(text) { match ->
+            match.groupValues[1].toInt(16).toChar().toString()
+        }
+    }
+
+    private fun parseCodepoint(raw: String): Int {
+        val value = raw.trim()
+        return when {
+            value.startsWith("0x", ignoreCase = true) -> value.substring(2).toIntOrNull(16)
+            value.startsWith("U+", ignoreCase = true) -> value.substring(2).toIntOrNull(16)
+            else -> value.toIntOrNull()
+        } ?: 0xE001
+    }
+
     fun getTitleMaterial(uid: String): XMaterial {
         val type = titleConfig.getString("$uid.material") ?: error("title.yml $uid.material not found")
         return getMaterial(type)
@@ -429,6 +484,26 @@ object ConfigUtils {
 
     fun getParticlePresetForValidation(id: String): TitleParticleEffect {
         return readParticleEffectFromPreset("particles.$id", id)
+    }
+
+    fun getTitleDisplayEffect(uid: String): TitleDisplayEffect {
+        val path = "$uid.display"
+        if (!displayEnable || !titleConfig.getBoolean("$path.enable", false)) {
+            return TitleDisplayEffect()
+        }
+        val image = titleConfig.getString("$path.image")?.trim().orEmpty()
+        val text = image.takeIf { it.isNotBlank() }
+            ?.let { TitleImageFontManager.getGlyph(it) }
+            ?: decodeUnicodeEscapes(titleConfig.getString("$path.text")?.trim().orEmpty())
+        return TitleDisplayEffect(
+            enabled = true,
+            text = text,
+            image = image,
+            yOffset = titleConfig.getDouble("$path.y-offset", displayDefaultYOffset),
+            scale = titleConfig.getDouble("$path.scale", displayDefaultScale.toDouble()).toFloat(),
+            shadow = titleConfig.getBoolean("$path.shadow", displayDefaultShadow),
+            seeThrough = titleConfig.getBoolean("$path.see-through", displayDefaultSeeThrough),
+        )
     }
 
     fun getTitleBuffEffect(uid: String): TitleBuffEffect {

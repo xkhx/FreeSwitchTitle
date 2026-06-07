@@ -30,6 +30,18 @@ fly:
   permission:
     - essentials.fly
     - essentials.tp
+  # 头顶图片称号显示：需要客户端资源包将 text 中的字符映射为图片
+  # 例如资源包中把 \uE001 绑定到一张 PNG 后，这里就会在玩家头上显示该图片
+  display:
+    enable: false
+    # image 会从 plugins/FreeSwitchTitle/images 中读取 PNG，并自动生成资源包映射
+    image: vip.png
+    # text 可用于手动资源包字符，未配置 image 或 image 不存在时作为回退
+    text: '\\uE001'
+    y-offset: 2.55
+    scale: 1.0
+    shadow: false
+    see-through: false
   # 内置粒子效果：引用 particles.yml 中的预设，佩戴称号时自动启动，卸下/过期/退出时自动停止
   # 可简写为 particle: halo，也可写成 particle.preset: halo；例如 angel-wings 为翅膀效果；留空或删除 effects 节点则不启用粒子
   # potion / attribute 引用 effects.yml 中的药水与属性预设

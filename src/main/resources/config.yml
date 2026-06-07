@@ -36,6 +36,34 @@ preview:
   # 预览冷却时间
   cooldown: 5s
 
+# 头顶图片称号显示，需要客户端资源包将 display.text 中的字符映射为图片
+display:
+  enable: true
+  # 显示实体跟随玩家的刷新间隔，单位 tick
+  update-interval: 2
+  # 默认显示高度，基于玩家脚下位置向上偏移
+  default-y-offset: 2.55
+  # 默认缩放
+  default-scale: 1.0
+  # 默认是否显示文字阴影
+  default-shadow: false
+  # 默认是否隔墙可见
+  default-see-through: false
+  # 自动图片资源包配置：把 images 目录中的 png 自动映射为可显示在头顶的字体字符
+  resource-pack:
+    enable: true
+    # 图片来源目录，相对于插件数据目录
+    image-folder: images
+    # 资源包输出目录，同时会生成 resourcepack.zip
+    output-folder: resourcepack
+    # 资源包命名空间
+    namespace: freeswitchtitle
+    # 自动分配字符的起始码位，使用私有区避免冲突
+    start-codepoint: '0xE001'
+    # 字体图片默认高度与基线
+    default-height: 16
+    default-ascent: 8
+
 # 称号图鉴与收藏奖励
 collection:
   # 收藏数量达到指定阈值后自动发放奖励称号，奖励只会领取一次

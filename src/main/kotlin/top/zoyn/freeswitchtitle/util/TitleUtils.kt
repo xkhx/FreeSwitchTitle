@@ -89,6 +89,7 @@ object TitleUtils {
             permissions = ConfigUtils.getTitlePermissions(uid),
             particleEffect = ConfigUtils.getTitleParticleEffect(uid),
             buffEffect = ConfigUtils.getTitleBuffEffect(uid),
+            displayEffect = ConfigUtils.getTitleDisplayEffect(uid),
             equipActions = ConfigUtils.getTitleEquipActions(uid),
             unequipActions = ConfigUtils.getTitleUnequipActions(uid),
             buyActions = ConfigUtils.getTitleBuyActions(uid),
@@ -313,12 +314,14 @@ object TitleUtils {
             PermissionManager.revoke(player, it, retainedPermissions)
             TitleBuffManager.clear(player)
             TitleParticleManager.stop(player)
+            TitleDisplayManager.stop(player)
             TitleEffectUtils.runUnequip(player, it)
             callEvent(TitleUnequipEvent(player, it, "SWITCH"))
         }
         uuid.getPlayerDataContainer()[USING_KEY] = uid
         TitleBuffManager.apply(player, title)
         TitleParticleManager.start(player, title)
+        TitleDisplayManager.start(player, title)
         TitleEffectUtils.runEquip(player, title)
         return TitleOperationResult.SUCCESS
     }
@@ -338,6 +341,7 @@ object TitleUtils {
             PermissionManager.revoke(player, title)
             TitleBuffManager.clear(player)
             TitleParticleManager.stop(player)
+            TitleDisplayManager.stop(player)
             TitleEffectUtils.runUnequip(player, title)
             TitleEffectUtils.runReset(player, title)
             callEvent(TitleUnequipEvent(player, title, "RESET"))
@@ -398,6 +402,7 @@ object TitleUtils {
                     PermissionManager.revoke(player, oldTitle)
                     TitleBuffManager.clear(player)
                     TitleParticleManager.stop(player)
+                    TitleDisplayManager.stop(player)
                     TitleEffectUtils.runUnequip(player, oldTitle)
                     callEvent(TitleUnequipEvent(player, oldTitle, "EXPIRE"))
                 }

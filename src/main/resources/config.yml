@@ -1,3 +1,6 @@
+# 配置结构版本，请勿随意修改
+config-version: 1
+
 # 数据库配置
 sql:
   # 关闭则使用本地 SQLite 存储
@@ -18,8 +21,18 @@ title:
 # 称号商城
 shop:
   enable: true
-  # VAULT / PLAYER_POINTS / BOTH
+  # 默认货币类型，称号可通过 shop.currency 单独覆盖。VAULT / PLAYER_POINTS / BOTH / FREE
   currency: VAULT
+  # 是否记录购买成功/失败日志到 purchase-logs.yml
+  log-purchases: true
+
+# 称号图鉴与收藏奖励
+collection:
+  # 收藏数量达到指定阈值后自动发放奖励称号，奖励只会领取一次
+  rewards:
+    # 示例：拥有 5 个称号时发放 collector 称号
+    # 5:
+    #   - collector
 
 # 称号权限处理
 permission:

@@ -14,6 +14,9 @@ import top.zoyn.freeswitchtitle.FreeSwitchTitle
 import top.zoyn.freeswitchtitle.api.FreeSwitchTitleAPI
 import top.zoyn.freeswitchtitle.gui.type.GuiType
 import top.zoyn.freeswitchtitle.hook.economy.EconomyManager
+import top.zoyn.freeswitchtitle.hook.economy.PlayerPointsEconomy
+import top.zoyn.freeswitchtitle.hook.economy.PurchaseSource
+import top.zoyn.freeswitchtitle.hook.economy.VaultEconomy
 import top.zoyn.freeswitchtitle.util.ConfigUtils
 import top.zoyn.freeswitchtitle.util.addTitle
 import top.zoyn.freeswitchtitle.util.openTitleListMenu
@@ -29,6 +32,10 @@ import java.util.UUID
 )
 object FreeSwitchTitleCommand {
 
+    private fun titleCategorySuggestions(): List<String> {
+        return (listOf("all") + FreeSwitchTitleAPI.getTitleCategoryList()).distinct()
+    }
+
     @CommandBody
     val main = mainCommand {
         createHelper()
@@ -36,6 +43,14 @@ object FreeSwitchTitleCommand {
 
     @CommandBody(permission = "freeswitchtitle.command.open", permissionDefault = PermissionDefault.TRUE)
     val open = subCommand {
+        dynamic("category") {
+            suggestionUncheck<Player> { _, _ ->
+                titleCategorySuggestions()
+            }
+            execute<Player> { sender, context, _ ->
+                sender.openTitleListMenu(GuiType.PLAYER_LIST, category = context["category"])
+            }
+        }
         execute<Player> { sender, _, _ ->
             sender.openTitleListMenu(GuiType.PLAYER_LIST)
         }
@@ -43,12 +58,39 @@ object FreeSwitchTitleCommand {
 
     @CommandBody(permission = "freeswitchtitle.command.shop", permissionDefault = PermissionDefault.TRUE)
     val shop = subCommand {
+        dynamic("category") {
+            suggestionUncheck<Player> { _, _ ->
+                titleCategorySuggestions()
+            }
+            execute<Player> { sender, context, _ ->
+                if (!ConfigUtils.shopEnable) {
+                    sender.sendLang("command-shop-disabled")
+                    return@execute
+                }
+                sender.openTitleListMenu(GuiType.TITLE_SHOP, category = context["category"])
+            }
+        }
         execute<Player> { sender, _, _ ->
             if (!ConfigUtils.shopEnable) {
                 sender.sendLang("command-shop-disabled")
                 return@execute
             }
             sender.openTitleListMenu(GuiType.TITLE_SHOP)
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.collection", permissionDefault = PermissionDefault.TRUE)
+    val collection = subCommand {
+        dynamic("category") {
+            suggestionUncheck<Player> { _, _ ->
+                titleCategorySuggestions()
+            }
+            execute<Player> { sender, context, _ ->
+                sender.openTitleListMenu(GuiType.TITLE_COLLECTION, category = context["category"])
+            }
+        }
+        execute<Player> { sender, _, _ ->
+            sender.openTitleListMenu(GuiType.TITLE_COLLECTION)
         }
     }
 
@@ -63,6 +105,28 @@ object FreeSwitchTitleCommand {
         }
     }
 
+    @CommandBody(permission = "freeswitchtitle.command.balance", permissionDefault = PermissionDefault.TRUE)
+    val balance = subCommand {
+        execute<Player> { sender, _, _ ->
+            sender.sendLang("command-balance", VaultEconomy.getBalance(sender), PlayerPointsEconomy.getBalance(sender))
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.renew", permissionDefault = PermissionDefault.TRUE)
+    val renew = subCommand {
+        dynamic("uid") {
+            suggestionUncheck<Player> { _, _ ->
+                FreeSwitchTitleAPI.getTitleUidList()
+            }
+            execute<Player> { sender, context, _ ->
+                val uid = context["uid"]
+                val title = FreeSwitchTitleAPI.getTitle(uid)
+                val result = EconomyManager.renew(sender, uid)
+                EconomyManager.sendRenewResult(sender, result, title)
+            }
+        }
+    }
+
     @CommandBody(permission = "freeswitchtitle.command.buy", permissionDefault = PermissionDefault.TRUE)
     val buy = subCommand {
         dynamic("uid") {
@@ -72,7 +136,7 @@ object FreeSwitchTitleCommand {
             execute<Player> { sender, context, _ ->
                 val uid = context["uid"]
                 val title = FreeSwitchTitleAPI.getTitle(uid)
-                val result = EconomyManager.purchase(sender, uid)
+                val result = EconomyManager.purchase(sender, uid, PurchaseSource.COMMAND)
                 EconomyManager.sendResult(sender, result, title)
             }
         }
@@ -81,6 +145,15 @@ object FreeSwitchTitleCommand {
     @CommandBody(permission = "freeswitchtitle.command.look", permissionDefault = PermissionDefault.TRUE)
     val look = subCommand {
         player("player") {
+            dynamic("category") {
+                suggestionUncheck<Player> { _, _ ->
+                    titleCategorySuggestions()
+                }
+                execute<Player> { sender, context, _ ->
+                    val target = context.player("player")
+                    sender.openTitleListMenu(GuiType.LOOK_PLAYER, target.uniqueId, context["category"])
+                }
+            }
             execute<Player> { sender, context, _ ->
                 val target = context.player("player")
                 sender.openTitleListMenu(GuiType.LOOK_PLAYER, target.uniqueId)
@@ -90,6 +163,18 @@ object FreeSwitchTitleCommand {
 
     @CommandBody(permission = "freeswitchtitle.command.list", permissionDefault = PermissionDefault.OP)
     val list = subCommand {
+        dynamic("category") {
+            suggestionUncheck<CommandSender> { _, _ ->
+                titleCategorySuggestions()
+            }
+            execute<CommandSender> { sender, context, _ ->
+                if (sender !is Player) {
+                    sender.sendMessage(FreeSwitchTitleAPI.getTitleDataListByCategory(context["category"]).map { it.uid }.toString())
+                    return@execute
+                }
+                sender.openTitleListMenu(GuiType.TITLE_LIST, category = context["category"])
+            }
+        }
         execute<CommandSender> { sender, _, _ ->
             if (sender !is Player) {
                 sender.sendMessage(FreeSwitchTitleAPI.getTitleUidList().toString())

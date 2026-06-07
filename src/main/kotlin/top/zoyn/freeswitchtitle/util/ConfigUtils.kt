@@ -3,15 +3,21 @@ package top.zoyn.freeswitchtitle.util
 import taboolib.common5.cchar
 import taboolib.library.xseries.XMaterial
 import top.zoyn.freeswitchtitle.FreeSwitchTitle
+import top.zoyn.freeswitchtitle.data.TitleRarity
 import top.zoyn.freeswitchtitle.hook.economy.CurrencyType
 import top.zoyn.freeswitchtitle.hook.permission.PermissionMode
 import top.zoyn.freeswitchtitle.util.TitleUtils.titleConfig
+import java.text.SimpleDateFormat
+import java.util.Locale
 import kotlin.jvm.optionals.getOrNull
 
 /**
  * 配置文件相关工具类。
  */
 object ConfigUtils {
+
+    val configVersion: Int
+        get() = FreeSwitchTitle.config.getInt("config-version", 1)
 
     val shopEnable: Boolean
         get() {
@@ -21,6 +27,23 @@ object ConfigUtils {
 
     val shopCurrency: CurrencyType
         get() = CurrencyType.match(FreeSwitchTitle.config.getString("shop.currency") ?: "VAULT")
+
+    val shopLogPurchases: Boolean
+        get() = FreeSwitchTitle.config.getBoolean("shop.log-purchases", true)
+
+    val collectionRewards: Map<Int, List<String>>
+        get() {
+            val section = FreeSwitchTitle.config.getConfigurationSection("collection.rewards") ?: return emptyMap()
+            return section.getKeys(false)
+                .mapNotNull { key ->
+                    val threshold = key.toIntOrNull()?.takeIf { it > 0 } ?: return@mapNotNull null
+                    val rewards = section.getStringList(key)
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                    if (rewards.isEmpty()) null else threshold to rewards
+                }
+                .toMap()
+        }
 
     val enableChat: Boolean
         get() = FreeSwitchTitle.config.getBoolean("chat.show", false)
@@ -57,6 +80,9 @@ object ConfigUtils {
 
     val myTitle: String
         get() = FreeSwitchTitle.guiConfig.getString("gui.title.my-title") ?: error("gui.yml gui.title.my-title not found")
+
+    val collectionTitle: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.title.collection-title") ?: "称号图鉴"
 
     val guiMap: List<String>
         get() = FreeSwitchTitle.guiConfig.getStringList("gui.map")
@@ -133,6 +159,9 @@ object ConfigUtils {
     val statusPointsPrice: String
         get() = FreeSwitchTitle.guiConfig.getString("gui.status.points-price") ?: "&b点券价格: {0}"
 
+    val statusFreePrice: String
+        get() = FreeSwitchTitle.guiConfig.getString("gui.status.free-price") ?: "&a价格: 免费"
+
     val statusClickBuy: String
         get() = FreeSwitchTitle.guiConfig.getString("gui.status.click-buy") ?: "&a点击购买"
 
@@ -168,17 +197,38 @@ object ConfigUtils {
 
     fun getTitleJoinMessage(uid: String): String = titleConfig.getString("$uid.join-message") ?: ""
 
+    fun getTitleCategory(uid: String): String = titleConfig.getString("$uid.category")
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }
+        ?: "default"
+
+    fun getTitleRarity(uid: String): TitleRarity = TitleRarity.match(titleConfig.getString("$uid.rarity"))
+
+    fun getTitleHidden(uid: String): Boolean = titleConfig.getBoolean("$uid.hidden", false)
+
     fun getTitleDurationMillis(uid: String): Long = TitleDurationUtils.parse(titleConfig.getString("$uid.duration"))
 
     fun getTitleDurationText(uid: String): String = TitleDurationUtils.format(getTitleDurationMillis(uid))
 
     fun getTitleShopEnable(uid: String): Boolean = titleConfig.getBoolean("$uid.shop.enable", false)
 
+    fun getTitleShopAvailableFrom(uid: String): Long? = parseTitleShopDateTime(uid, "shop.available-from")
+
+    fun getTitleShopAvailableUntil(uid: String): Long? = parseTitleShopDateTime(uid, "shop.available-until")
+
+    fun getTitleShopCurrency(uid: String): CurrencyType {
+        return CurrencyType.match(titleConfig.getString("$uid.shop.currency") ?: FreeSwitchTitle.config.getString("shop.currency") ?: "VAULT")
+    }
+
     fun getTitleVaultPrice(uid: String): Double = titleConfig.getDouble("$uid.shop.vault-price", 0.0)
 
     fun getTitlePointsPrice(uid: String): Int = titleConfig.getInt("$uid.shop.points-price", 0)
 
     fun getTitleShopPermission(uid: String): String = titleConfig.getString("$uid.shop.permission") ?: ""
+
+    fun getTitleRequiredPermissions(uid: String): List<String> = titleConfig.getStringList("$uid.requirements.permissions")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
 
     fun getTitlePermissions(uid: String): List<String> = titleConfig.getStringList("$uid.permission")
 
@@ -188,8 +238,27 @@ object ConfigUtils {
 
     fun getTitleBuyActions(uid: String): List<String> = getTitleActions(uid, "buy")
 
+    fun getTitleExpireActions(uid: String): List<String> = getTitleActions(uid, "expire")
+
+    fun getTitleObtainActions(uid: String): List<String> = getTitleActions(uid, "obtain")
+
+    fun getTitleRemoveActions(uid: String): List<String> = getTitleActions(uid, "remove")
+
+    fun getTitleResetActions(uid: String): List<String> = getTitleActions(uid, "reset")
+
     private fun getTitleActions(uid: String, type: String): List<String> {
         val actions = titleConfig.getStringList("$uid.actions.$type")
         return actions.ifEmpty { titleConfig.getStringList("$uid.commands.$type") }
+    }
+
+    private fun parseTitleShopDateTime(uid: String, path: String): Long? {
+        val raw = titleConfig.getString("$uid.$path")?.trim().orEmpty()
+        if (raw.isBlank()) return null
+        return runCatching {
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).parse(raw)?.time
+        }.getOrElse {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 $uid 的 $path 时间格式无效: $raw")
+            null
+        }
     }
 }

@@ -6,16 +6,35 @@ fly:
     - '&r点击佩戴这个称号'
     - '&r称号期限: {duration}'
   join-message: '&b飞行员 &f{0} &b加入了游戏'
+  # category 可用于 GUI 分类过滤，例如 default、donate、activity、achievement、limited
+  category: default
+  # rarity 可选 common、rare、epic、legendary、limited
+  rarity: common
+  # hidden 为 true 时，未拥有该称号的玩家在图鉴中不可见
+  hidden: false
   # permanent 表示永久，限时称号可填写 7d、12h、30m、10s 等
   duration: permanent
   shop:
     enable: true
+    # 留空时使用 config.yml 的 shop.currency；可选 VAULT / PLAYER_POINTS / BOTH / FREE
+    currency: VAULT
+    # 可选：限时上架时间，格式 yyyy-MM-dd HH:mm:ss；留空表示不限制
+    available-from: ''
+    available-until: ''
     vault-price: 1000.0
     points-price: 50
     permission: ''
+  # 购买条件：这里的权限需要全部满足；为空则不限制
+  requirements:
+    permissions: []
   permission:
     - essentials.fly
     - essentials.tp
+  # 支持动作前缀: [console], [player], [op], [message], [broadcast], [actionbar], [title], [sound], [delay]
+  # [delay] 会延迟执行后续动作，支持 20t、2s、500ms、1m；纯数字按 tick 处理
+  # 可用变量: {player}, {uuid}, {title}, {uid}, {title_id}, {duration}, {expire}, {price}
+  # 同时支持变量: %player%, %uuid%, %title%, %title_id%, %duration%, %expire%, %price%
+  # 可选动作节点: obtain, remove, reset
   actions:
     equip:
       - '[console] say {player} 佩戴了 {title}'
@@ -25,4 +44,8 @@ fly:
       - '[message] &c你卸下了 {title}'
     buy:
       - '[console] say {player} 购买了 {title}'
-      - '[message] &a你购买了 {title}'
+      - '[message] &a你购买了 {title}，价格: {price}'
+      - '[delay] 2s'
+      - '[sound] ENTITY_PLAYER_LEVELUP;1;1'
+    expire:
+      - '[message] &c你的称号 {title} 已过期'

@@ -3,6 +3,7 @@ package top.zoyn.freeswitchtitle.hook
 import org.bukkit.OfflinePlayer
 import taboolib.platform.compat.PlaceholderExpansion
 import top.zoyn.freeswitchtitle.util.ConfigUtils
+import top.zoyn.freeswitchtitle.api.FreeSwitchTitleAPI
 import top.zoyn.freeswitchtitle.util.getCurrentTitle
 import top.zoyn.freeswitchtitle.util.getOwnedTitle
 import top.zoyn.freeswitchtitle.util.getTitleText
@@ -18,6 +19,9 @@ object PapiHook : PlaceholderExpansion {
             "title_show" -> player.getTitleText().let { title -> if (title == ConfigUtils.prefix) "无" else title }
             "title_uid" -> player.getCurrentTitle()?.uid ?: ""
             "title_count" -> player.getOwnedTitle().size.toString()
+            "title_collected" -> FreeSwitchTitleAPI.getPlayerCollectionCount(player).toString()
+            "title_total" -> FreeSwitchTitleAPI.getCollectionTotal().toString()
+            "title_progress" -> FreeSwitchTitleAPI.getPlayerCollectionProgress(player)
             else -> ""
         }
     }

@@ -15,8 +15,10 @@ import top.zoyn.freeswitchtitle.gui.type.GuiType
 import top.zoyn.freeswitchtitle.hook.economy.CurrencyType
 import top.zoyn.freeswitchtitle.hook.economy.EconomyManager
 import top.zoyn.freeswitchtitle.hook.economy.PurchaseResult
+import top.zoyn.freeswitchtitle.hook.economy.PurchaseSource
 import top.zoyn.freeswitchtitle.gui.type.GuiType.LOOK_PLAYER
 import top.zoyn.freeswitchtitle.gui.type.GuiType.PLAYER_LIST
+import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_COLLECTION
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_LIST
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_SHOP
 import top.zoyn.freeswitchtitle.util.ConfigUtils
@@ -29,12 +31,13 @@ import java.util.UUID
 
 object PlayerGui {
 
-    fun openTitleListMenu(player: Player, type: GuiType, uuid: UUID? = null) {
+    fun openTitleListMenu(player: Player, type: GuiType, uuid: UUID? = null, category: String? = null) {
         player.openMenu<PageableChest<TitleData>> {
             title = when (type) {
                 PLAYER_LIST -> ConfigUtils.myTitle.replaceWithOrder(player.name).colored()
                 TITLE_LIST -> ConfigUtils.title.colored()
                 TITLE_SHOP -> ConfigUtils.shopTitle.colored()
+                TITLE_COLLECTION -> ConfigUtils.collectionTitle.colored()
                 LOOK_PLAYER -> {
                     val name = uuid?.getPlayerName() ?: "获取失败"
                     ConfigUtils.myTitle.replaceWithOrder(name).colored()
@@ -55,7 +58,7 @@ object PlayerGui {
                 colored()
             })
             elements {
-                elements(player, type, uuid)
+                elements(player, type, uuid, category)
             }
             onGenerate { _, title, _, _ ->
                 title.buildDisplayItem(extraLore(player, title, type, uuid))
@@ -92,13 +95,23 @@ object PlayerGui {
         }
     }
 
-    private fun elements(player: Player, type: GuiType, uuid: UUID?): List<TitleData> {
-        return when (type) {
+    private fun elements(player: Player, type: GuiType, uuid: UUID?, category: String?): List<TitleData> {
+        val titles = when (type) {
             PLAYER_LIST -> player.getOwnedTitle()
             TITLE_LIST -> FreeSwitchTitleAPI.getTitleDataList()
-            TITLE_SHOP -> if (ConfigUtils.shopEnable) FreeSwitchTitleAPI.getTitleDataList().filter { it.shopEnable } else emptyList()
+            TITLE_SHOP -> if (ConfigUtils.shopEnable) FreeSwitchTitleAPI.getTitleDataList().filter { it.shopEnable && it.isShopAvailableNow() } else emptyList()
+            TITLE_COLLECTION -> FreeSwitchTitleAPI.getVisibleCollectionTitleDataList(player)
             LOOK_PLAYER -> uuid?.getOwnedTitle() ?: emptyList()
         }
+        return filterByCategory(titles, category)
+    }
+
+    private fun filterByCategory(titles: List<TitleData>, category: String?): List<TitleData> {
+        val normalized = category?.trim().orEmpty()
+        if (normalized.isBlank() || normalized.equals("all", ignoreCase = true) || normalized == "*") {
+            return titles
+        }
+        return titles.filter { it.category.equals(normalized, ignoreCase = true) }
     }
 
     private fun click(player: Player, title: TitleData, type: GuiType) {
@@ -109,9 +122,9 @@ object PlayerGui {
                     player.closeInventory()
                 }
             }
-            TITLE_LIST, LOOK_PLAYER -> player.sendLang("view-only-title")
+            TITLE_LIST, LOOK_PLAYER, TITLE_COLLECTION -> player.sendLang("view-only-title")
             TITLE_SHOP -> {
-                val result = EconomyManager.purchase(player, title.uid)
+                val result = EconomyManager.purchase(player, title.uid, PurchaseSource.GUI)
                 EconomyManager.sendResult(player, result, title)
                 if (result == PurchaseResult.SUCCESS) {
                     player.closeInventory()
@@ -150,14 +163,20 @@ object PlayerGui {
                         renderLore(player, player.uniqueId, title, "shop.no-permission", listOf(ConfigUtils.statusNoPermission))
                     else -> renderLore(player, player.uniqueId, title, "shop.buy", listOf(ConfigUtils.statusClickBuy))
                 }
-                lore + when (ConfigUtils.shopCurrency) {
+                lore + when (title.shopCurrency) {
                     CurrencyType.VAULT -> renderLore(player, player.uniqueId, title, "shop.vault-price", listOf(ConfigUtils.statusVaultPrice), title.vaultPrice)
                     CurrencyType.PLAYER_POINTS -> renderLore(player, player.uniqueId, title, "shop.points-price", listOf(ConfigUtils.statusPointsPrice), title.pointsPrice)
                     CurrencyType.BOTH -> {
                         renderLore(player, player.uniqueId, title, "shop.vault-price", listOf(ConfigUtils.statusVaultPrice), title.vaultPrice) +
                             renderLore(player, player.uniqueId, title, "shop.points-price", listOf(ConfigUtils.statusPointsPrice), title.pointsPrice)
                     }
+                    CurrencyType.FREE -> renderLore(player, player.uniqueId, title, "shop.free-price", listOf(ConfigUtils.statusFreePrice))
                 }
+            }
+            TITLE_COLLECTION -> if (owned) {
+                renderLore(player, player.uniqueId, title, "collection.owned", listOf("&a状态: 已收集"))
+            } else {
+                renderLore(player, player.uniqueId, title, "collection.not-owned", listOf("&7状态: 未收集"))
             }
         }
     }
@@ -175,10 +194,17 @@ object PlayerGui {
                 line.replaceWithOrder(*args)
                     .replace("{uid}", title.uid)
                     .replace("{title}", title.title)
+                    .replace("{category}", title.category)
+                    .replace("{rarity}", title.rarity.name.lowercase())
+                    .replace("{rarity_name}", title.rarity.displayName)
+                    .replace("{rarity_color}", title.rarity.color)
                     .replace("{duration}", title.durationText)
                     .replace("{expire}", TitleUtils.getTitleExpireText(owner, title))
                     .replace("{vault_price}", title.vaultPrice.toString())
                     .replace("{points_price}", title.pointsPrice.toString())
+                    .replace("{collected}", FreeSwitchTitleAPI.getPlayerCollectionCount(owner).toString())
+                    .replace("{total}", FreeSwitchTitleAPI.getCollectionTotal().toString())
+                    .replace("{progress}", FreeSwitchTitleAPI.getPlayerCollectionProgress(owner))
             }
             .replacePlaceholder(player)
             .colored()

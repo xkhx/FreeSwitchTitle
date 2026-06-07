@@ -31,7 +31,9 @@ object PlayerListener {
     fun join(event: PlayerJoinEvent) {
         val player = event.player
         player.setupDataContainer()
+        TitleUtils.migratePlayerData(player.uniqueId)
         TitleUtils.cleanupExpiredTitles(player.uniqueId)
+        TitleUtils.checkCollectionRewards(player.uniqueId)
         player.getCurrentTitle()?.let { title ->
             if (title.joinMessage.isNotEmpty()) {
                 event.joinMessage = title.joinMessage.replaceWithOrder(player.name)

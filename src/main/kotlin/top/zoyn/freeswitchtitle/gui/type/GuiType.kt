@@ -4,5 +4,6 @@ enum class GuiType {
     TITLE_LIST,
     PLAYER_LIST,
     TITLE_SHOP,
-    LOOK_PLAYER
+    LOOK_PLAYER,
+    TITLE_COLLECTION
 }

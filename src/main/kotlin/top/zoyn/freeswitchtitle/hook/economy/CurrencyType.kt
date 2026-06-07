@@ -3,7 +3,8 @@ package top.zoyn.freeswitchtitle.hook.economy
 enum class CurrencyType {
     VAULT,
     PLAYER_POINTS,
-    BOTH;
+    BOTH,
+    FREE;
 
     companion object {
         fun match(value: String): CurrencyType {

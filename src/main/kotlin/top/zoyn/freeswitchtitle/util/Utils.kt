@@ -24,6 +24,8 @@ fun OfflinePlayer.addTitle(uid: String) = FreeSwitchTitleAPI.addTitle(this, uid)
 
 fun OfflinePlayer.removeTitle(uid: String) = FreeSwitchTitleAPI.removeTitle(this, uid)
 
+fun OfflinePlayer.renewTitle(uid: String) = FreeSwitchTitleAPI.renewTitle(this, uid)
+
 fun OfflinePlayer.resetCurrentTitle(): Boolean = FreeSwitchTitleAPI.resetPlayerTitle(this)
 
 fun UUID.getTitleText() = FreeSwitchTitleAPI.getPlayerTitle(this)
@@ -42,8 +44,10 @@ fun UUID.addTitle(uid: String) = FreeSwitchTitleAPI.addTitle(this, uid)
 
 fun UUID.removeTitle(uid: String) = FreeSwitchTitleAPI.removeTitle(this, uid)
 
+fun UUID.renewTitle(uid: String) = FreeSwitchTitleAPI.renewTitle(this, uid)
+
 fun UUID.resetCurrentTitle(): Boolean = FreeSwitchTitleAPI.resetPlayerTitle(this)
 
 fun UUID.getPlayerName() = bukkitPlugin.server.getOfflinePlayer(this).name
 
-fun Player.openTitleListMenu(type: GuiType, uuid: UUID? = null) = PlayerGui.openTitleListMenu(this, type, uuid)
+fun Player.openTitleListMenu(type: GuiType, uuid: UUID? = null, category: String? = null) = PlayerGui.openTitleListMenu(this, type, uuid, category)

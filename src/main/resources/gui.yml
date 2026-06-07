@@ -6,6 +6,7 @@ gui:
     all-title: "全部称号"
     shop-title: "称号商城"
     my-title: "{0} 的称号列表"
+    collection-title: "称号图鉴"
 
   # 列表布局
   map:
@@ -30,6 +31,7 @@ gui:
     lore:
       - "&r正在使用: %fst_title_show%"
       - "&r拥有称号: %fst_title_count% 个"
+      - "&r收藏进度: %fst_title_collected%/%fst_title_total% (%fst_title_progress%)"
 
   # 上一页
   previous:
@@ -48,7 +50,7 @@ gui:
     last-name: "&7下一页"
 
   # 称号物品追加 lore 模板
-  # 可用变量: {title}, {uid}, {duration}, {expire}, {vault_price}, {points_price}
+  # 可用变量: {title}, {uid}, {category}, {rarity}, {rarity_name}, {rarity_color}, {duration}, {expire}, {vault_price}, {points_price}, {collected}, {total}, {progress}
   lore:
     player-list:
       using:
@@ -84,6 +86,17 @@ gui:
         - '&6金币价格: {0}'
       points-price:
         - '&b点券价格: {0}'
+      free-price:
+        - '&a价格: 免费'
+    collection:
+      owned:
+        - '&a状态: 已收集'
+        - '&7稀有度: {rarity_color}{rarity_name}'
+        - '&7收藏进度: &f{collected}/{total} &7({progress})'
+      not-owned:
+        - '&7状态: 未收集'
+        - '&7稀有度: {rarity_color}{rarity_name}'
+        - '&7称号期限: &f{duration}'
 
   # 旧版称号物品追加状态，作为 gui.lore 缺失时的兼容回退
   status:
@@ -93,5 +106,6 @@ gui:
     no-permission: '&c状态: 无权限购买'
     vault-price: '&6金币价格: {0}'
     points-price: '&b点券价格: {0}'
+    free-price: '&a价格: 免费'
     click-buy: '&a点击购买'
     click-equip: '&a点击佩戴'

@@ -46,13 +46,13 @@ object TitleParticleManager {
         )
     }
 
-    fun startPreview(player: Player, title: TitleData, durationTicks: Long, onEnd: () -> Unit = {}) {
+    fun startPreview(player: Player, title: TitleData, durationTicks: Long, onEnd: () -> Unit = {}): Boolean {
         stopPreview(player.uniqueId)
         val effect = title.particleEffect
-        if (!effect.enabled) return
+        if (!effect.enabled) return false
         val particle = parseParticle(effect.particle) ?: run {
             FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 ${title.uid} 的预览粒子类型无效: ${effect.particle}")
-            return
+            return false
         }
         var remain = durationTicks.coerceAtLeast(1L)
         previewTicks[player.uniqueId] = 0
@@ -71,6 +71,7 @@ object TitleParticleManager {
             0L,
             effect.intervalTicks
         )
+        return true
     }
 
     fun stopPreview(player: Player) {
@@ -80,6 +81,12 @@ object TitleParticleManager {
     fun stopPreview(uuid: UUID) {
         previewTasks.remove(uuid)?.cancel()
         previewTicks.remove(uuid)
+    }
+
+    fun stopAllPreview() {
+        previewTasks.values.forEach { it.cancel() }
+        previewTasks.clear()
+        previewTicks.clear()
     }
 
     fun stop(player: Player) {

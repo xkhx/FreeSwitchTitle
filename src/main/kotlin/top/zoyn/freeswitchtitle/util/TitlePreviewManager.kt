@@ -26,10 +26,15 @@ object TitlePreviewManager {
         }
         cooldowns[player.uniqueId] = now + ConfigUtils.previewCooldownMillis
         val durationMillis = ConfigUtils.previewDurationMillis
-        TitleParticleManager.startPreview(player, title, (durationMillis / 50L).coerceAtLeast(1L)) {
+        val started = TitleParticleManager.startPreview(player, title, (durationMillis / 50L).coerceAtLeast(1L)) {
             if (player.isOnline) {
                 player.sendLang("preview-end")
             }
+        }
+        if (!started) {
+            cooldowns.remove(player.uniqueId)
+            player.sendLang("preview-no-effect", title.title)
+            return false
         }
         player.sendLang("preview-start", title.title, TitleDurationUtils.format(durationMillis))
         return true
@@ -40,7 +45,7 @@ object TitlePreviewManager {
     }
 
     fun stopAll() {
-        TitleParticleManager.stopAll()
+        TitleParticleManager.stopAllPreview()
         cooldowns.clear()
     }
 }

@@ -19,8 +19,8 @@ object ConfigMigrationUtils {
         migrateConfig()
         migrateGui()
         migrateLang()
-        ensureExtraConfigFile("particles.yml")
-        ensureExtraConfigFile("effects.yml")
+        migrateParticles()
+        migrateEffects()
     }
 
     private fun migrateConfig() {
@@ -99,6 +99,77 @@ object ConfigMigrationUtils {
             changed = setIfMissing(config, path, value) || changed
         }
         saveIfChanged("lang/zh_CN.yml", config, changed)
+    }
+
+    private fun migrateParticles() {
+        ensureExtraConfigFile("particles.yml")
+        val config = FreeSwitchTitle.particleConfig
+        var changed = false
+        changed = setParticlePreset(config, "halo", "END_ROD", "HALO", 10, 1, 0.8, 0.0, 24, 0.0) || changed
+        changed = setParticlePreset(config, "flame-spiral", "FLAME", "SPIRAL", 5, 1, 0.7, 0.0, 18, 0.0) || changed
+        changed = setParticlePreset(config, "cloud-trail", "CLOUD", "TRAIL", 5, 1, 0.25, 0.0, 8, 0.0) || changed
+        changed = setParticlePreset(config, "angel-wings", "END_ROD", "WINGS", 4, 1, 1.35, 0.0, 22, 0.0) || changed
+        saveIfChanged("particles.yml", config, changed)
+    }
+
+    private fun migrateEffects() {
+        ensureExtraConfigFile("effects.yml")
+        val config = FreeSwitchTitle.effectConfig
+        var changed = false
+        changed = setPotionPreset(config, "speed", "SPEED", 1) || changed
+        changed = setPotionPreset(config, "night-vision", "NIGHT_VISION", 0) || changed
+        changed = setPotionPreset(config, "fire-immune", "FIRE_RESISTANCE", 0) || changed
+        changed = setAttributePreset(config, "warrior", "GENERIC_MAX_HEALTH", 4.0, "ADD_NUMBER") || changed
+        changed = setAttributePreset(config, "warrior", "GENERIC_ATTACK_DAMAGE", 2.0, "ADD_NUMBER") || changed
+        changed = setAttributePreset(config, "swift", "GENERIC_MOVEMENT_SPEED", 0.05, "ADD_SCALAR") || changed
+        saveIfChanged("effects.yml", config, changed)
+    }
+
+    private fun setParticlePreset(
+        config: Configuration,
+        id: String,
+        type: String,
+        shape: String,
+        interval: Int,
+        count: Int,
+        radius: Double,
+        height: Double,
+        points: Int,
+        speed: Double
+    ): Boolean {
+        val path = "particles.$id"
+        var changed = false
+        changed = setIfMissing(config, "$path.enable", true) || changed
+        changed = setIfMissing(config, "$path.type", type) || changed
+        changed = setIfMissing(config, "$path.shape", shape) || changed
+        changed = setIfMissing(config, "$path.interval", interval) || changed
+        changed = setIfMissing(config, "$path.count", count) || changed
+        changed = setIfMissing(config, "$path.radius", radius) || changed
+        changed = setIfMissing(config, "$path.height", height) || changed
+        changed = setIfMissing(config, "$path.points", points) || changed
+        changed = setIfMissing(config, "$path.speed", speed) || changed
+        changed = setIfMissing(config, "$path.offset.x", 0.0) || changed
+        changed = setIfMissing(config, "$path.offset.y", 0.0) || changed
+        changed = setIfMissing(config, "$path.offset.z", 0.0) || changed
+        return changed
+    }
+
+    private fun setPotionPreset(config: Configuration, id: String, type: String, amplifier: Int): Boolean {
+        val path = "potions.$id.effects.$type"
+        var changed = false
+        changed = setIfMissing(config, "$path.amplifier", amplifier) || changed
+        changed = setIfMissing(config, "$path.ambient", true) || changed
+        changed = setIfMissing(config, "$path.particles", false) || changed
+        changed = setIfMissing(config, "$path.icon", true) || changed
+        return changed
+    }
+
+    private fun setAttributePreset(config: Configuration, id: String, attribute: String, amount: Double, operation: String): Boolean {
+        val path = "attributes.$id.$attribute"
+        var changed = false
+        changed = setIfMissing(config, "$path.amount", amount) || changed
+        changed = setIfMissing(config, "$path.operation", operation) || changed
+        return changed
     }
 
     private fun ensureExtraConfigFile(name: String) {

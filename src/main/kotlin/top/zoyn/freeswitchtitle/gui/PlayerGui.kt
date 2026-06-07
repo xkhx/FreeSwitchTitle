@@ -23,7 +23,6 @@ import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_COLLECTION
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_LIST
 import top.zoyn.freeswitchtitle.gui.type.GuiType.TITLE_SHOP
 import top.zoyn.freeswitchtitle.util.ConfigUtils
-import top.zoyn.freeswitchtitle.util.TitlePreviewManager
 import top.zoyn.freeswitchtitle.util.TitleUtils
 import top.zoyn.freeswitchtitle.util.getCurrentTitle
 import top.zoyn.freeswitchtitle.util.getOwnedTitle
@@ -109,7 +108,7 @@ object PlayerGui {
             PLAYER_LIST -> player.getOwnedTitle()
             TITLE_LIST -> FreeSwitchTitleAPI.getTitleDataList()
             TITLE_SHOP -> if (ConfigUtils.shopEnable) FreeSwitchTitleAPI.getTitleDataList().filter { it.shopEnable && it.isShopAvailableNow() } else emptyList()
-            TITLE_COLLECTION -> FreeSwitchTitleAPI.getCollectionTitleDataList()
+            TITLE_COLLECTION -> FreeSwitchTitleAPI.getVisibleCollectionTitleDataList(player)
             LOOK_PLAYER -> uuid?.getOwnedTitle() ?: emptyList()
         }
         return filterByCategory(titles, category)
@@ -245,7 +244,7 @@ object PlayerGui {
     private fun openCategoryMenu(player: Player, type: GuiType, uuid: UUID?) {
         player.openMenu<Chest>(ConfigUtils.categoryMenuTitle.colored()) {
             rows(3)
-            val categories = listOf("all") + FreeSwitchTitleAPI.getTitleCategoryList()
+            val categories = listOf("all") + availableCategories(player, type, uuid)
             categories.distinct().take(27).forEachIndexed { index, category ->
                 val isAll = category.equals("all", ignoreCase = true)
                 set(index, buildItem(if (isAll) ConfigUtils.categoryAllType else ConfigUtils.categoryItemType) {
@@ -257,6 +256,13 @@ object PlayerGui {
                 }
             }
         }
+    }
+
+    private fun availableCategories(player: Player, type: GuiType, uuid: UUID?): List<String> {
+        return elements(player, type, uuid, null)
+            .map { it.category }
+            .filter { it.isNotBlank() }
+            .distinct()
     }
 
     private fun renderCategoryLore(player: Player, category: String?): List<String> {

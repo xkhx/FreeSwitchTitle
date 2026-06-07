@@ -338,6 +338,10 @@ object ConfigUtils {
 
     fun getTitleShopAvailableUntil(uid: String): Long? = parseTitleShopDateTime(uid, "shop.available-until")
 
+    fun getTitleShopAvailableFromRaw(uid: String): String = titleConfig.getString("$uid.shop.available-from")?.trim().orEmpty()
+
+    fun getTitleShopAvailableUntilRaw(uid: String): String = titleConfig.getString("$uid.shop.available-until")?.trim().orEmpty()
+
     fun getTitleShopCurrency(uid: String): CurrencyType {
         return CurrencyType.match(titleConfig.getString("$uid.shop.currency") ?: FreeSwitchTitle.config.getString("shop.currency") ?: "VAULT")
     }
@@ -370,9 +374,9 @@ object ConfigUtils {
     private fun getParticlePreset(id: String, uid: String): TitleParticleEffect {
         val normalized = id.trim()
         val path = "particles.$normalized"
-        if (normalized.isEmpty() || !FreeSwitchTitle.particleConfig.contains(path)) {
+        if (normalized.isEmpty() || !hasParticlePreset(normalized)) {
             FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 $uid 引用了不存在的粒子预设: $id")
-            return TitleParticleEffect()
+            return TitleParticleEffect(preset = normalized)
         }
         return readParticleEffectFromPreset(path, normalized)
     }
@@ -417,6 +421,10 @@ object ConfigUtils {
             ?.getKeys(false)
             ?.toList()
             .orEmpty()
+    }
+
+    fun hasParticlePreset(id: String): Boolean {
+        return id.isNotBlank() && FreeSwitchTitle.particleConfig.contains("particles.${id.trim()}")
     }
 
     fun getParticlePresetForValidation(id: String): TitleParticleEffect {
@@ -492,8 +500,16 @@ object ConfigUtils {
         return FreeSwitchTitle.effectConfig.getConfigurationSection("potions")?.getKeys(false)?.toList().orEmpty()
     }
 
+    fun hasPotionPreset(id: String): Boolean {
+        return id.isNotBlank() && FreeSwitchTitle.effectConfig.contains("potions.${id.trim()}.effects")
+    }
+
     fun getAttributePresetIds(): List<String> {
         return FreeSwitchTitle.effectConfig.getConfigurationSection("attributes")?.getKeys(false)?.toList().orEmpty()
+    }
+
+    fun hasAttributePreset(id: String): Boolean {
+        return id.isNotBlank() && FreeSwitchTitle.effectConfig.contains("attributes.${id.trim()}")
     }
 
     fun getTitleEquipActions(uid: String): List<String> = getTitleActions(uid, "equip")
@@ -519,7 +535,7 @@ object ConfigUtils {
         val raw = titleConfig.getString("$uid.$path")?.trim().orEmpty()
         if (raw.isBlank()) return null
         return runCatching {
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).parse(raw)?.time
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).apply { isLenient = false }.parse(raw)?.time
         }.getOrElse {
             FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 $uid 的 $path 时间格式无效: $raw")
             null

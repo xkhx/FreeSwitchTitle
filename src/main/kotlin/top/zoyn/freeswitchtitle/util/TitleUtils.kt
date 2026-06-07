@@ -79,6 +79,8 @@ object TitleUtils {
             shopEnable = ConfigUtils.getTitleShopEnable(uid),
             shopAvailableFrom = ConfigUtils.getTitleShopAvailableFrom(uid),
             shopAvailableUntil = ConfigUtils.getTitleShopAvailableUntil(uid),
+            shopAvailableFromRaw = ConfigUtils.getTitleShopAvailableFromRaw(uid),
+            shopAvailableUntilRaw = ConfigUtils.getTitleShopAvailableUntilRaw(uid),
             shopCurrency = ConfigUtils.getTitleShopCurrency(uid),
             vaultPrice = ConfigUtils.getTitleVaultPrice(uid),
             pointsPrice = ConfigUtils.getTitlePointsPrice(uid),
@@ -394,6 +396,7 @@ object TitleUtils {
             titleMap[current]?.let { oldTitle ->
                 if (player != null) {
                     PermissionManager.revoke(player, oldTitle)
+                    TitleBuffManager.clear(player)
                     TitleParticleManager.stop(player)
                     TitleEffectUtils.runUnequip(player, oldTitle)
                     callEvent(TitleUnequipEvent(player, oldTitle, "EXPIRE"))

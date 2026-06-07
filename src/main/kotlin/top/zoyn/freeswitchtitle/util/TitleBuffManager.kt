@@ -16,16 +16,16 @@ import java.util.UUID
 object TitleBuffManager {
 
     private const val POTION_DURATION_TICKS = 20 * 60 * 60
-    private val appliedPotions = mutableMapOf<UUID, Set<PotionEffectType>>()
+    private val appliedPotions = mutableMapOf<UUID, Map<PotionEffectType, PotionEffect?>>()
     private val appliedAttributes = mutableMapOf<UUID, Set<Attribute>>()
 
     fun apply(player: Player, title: TitleData) {
         clear(player)
         if (!title.buffEffect.enabled) return
-        val potionTypes = title.buffEffect.potions.mapNotNull { applyPotion(player, title, it) }.toSet()
+        val potionSnapshots = title.buffEffect.potions.mapNotNull { applyPotion(player, title, it) }.toMap()
         val attributeTypes = title.buffEffect.attributes.mapNotNull { applyAttribute(player, title, it) }.toSet()
-        if (potionTypes.isNotEmpty()) {
-            appliedPotions[player.uniqueId] = potionTypes
+        if (potionSnapshots.isNotEmpty()) {
+            appliedPotions[player.uniqueId] = potionSnapshots
         }
         if (attributeTypes.isNotEmpty()) {
             appliedAttributes[player.uniqueId] = attributeTypes
@@ -33,8 +33,11 @@ object TitleBuffManager {
     }
 
     fun clear(player: Player) {
-        appliedPotions.remove(player.uniqueId)?.forEach { type ->
+        appliedPotions.remove(player.uniqueId)?.forEach { (type, previous) ->
             player.removePotionEffect(type)
+            if (previous != null) {
+                player.addPotionEffect(previous, true)
+            }
         }
         appliedAttributes.remove(player.uniqueId)?.forEach { attribute ->
             player.getAttribute(attribute)?.modifiers
@@ -50,13 +53,14 @@ object TitleBuffManager {
         appliedAttributes.clear()
     }
 
-    private fun applyPotion(player: Player, title: TitleData, effect: TitlePotionEffect): PotionEffectType? {
+    private fun applyPotion(player: Player, title: TitleData, effect: TitlePotionEffect): Pair<PotionEffectType, PotionEffect?>? {
         val type = parsePotion(effect.type) ?: run {
             FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 称号 ${title.uid} 的药水效果无效: ${effect.type}")
             return null
         }
+        val previous = player.getPotionEffect(type)
         player.addPotionEffect(PotionEffect(type, POTION_DURATION_TICKS, effect.amplifier, effect.ambient, effect.particles, effect.icon), true)
-        return type
+        return type to previous
     }
 
     private fun applyAttribute(player: Player, title: TitleData, effect: TitleAttributeEffect): Attribute? {

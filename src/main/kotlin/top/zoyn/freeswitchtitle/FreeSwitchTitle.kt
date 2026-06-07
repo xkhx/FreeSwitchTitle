@@ -13,11 +13,14 @@ import taboolib.platform.util.bukkitPlugin
 import top.zoyn.freeswitchtitle.util.ConfigMigrationUtils
 import top.zoyn.freeswitchtitle.util.TitleBuffManager
 import top.zoyn.freeswitchtitle.util.TitleParticleManager
+import top.zoyn.freeswitchtitle.util.TitlePreviewManager
 import top.zoyn.freeswitchtitle.util.TitleUtils
+import top.zoyn.freeswitchtitle.util.getCurrentTitle
 
 object FreeSwitchTitle : Plugin() {
 
     private var titleExpiryTaskId = -1
+    private var titleBuffRefreshTaskId = -1
 
     @Config("config.yml")
     lateinit var config: ConfigFile
@@ -36,17 +39,23 @@ object FreeSwitchTitle : Plugin() {
         loadPlayerData()
         reload()
         startTitleExpiryTask()
+        startTitleBuffRefreshTask()
         Metrics(1259, pluginVersion, Platform.BUKKIT)
         sendConsoleMessage("${ChatColor.GREEN}> 作者: ${ChatColor.WHITE}星空 ${ChatColor.GREEN}| 版本: ${ChatColor.WHITE}$pluginVersion")
         sendConsoleMessage("${ChatColor.GREEN}> ${ChatColor.GOLD}FreeSwitchTitle 启动成功")
     }
 
     override fun onDisable() {
+        TitlePreviewManager.stopAll()
         TitleBuffManager.clearAll()
         TitleParticleManager.stopAll()
         if (titleExpiryTaskId != -1) {
             bukkitPlugin.server.scheduler.cancelTask(titleExpiryTaskId)
             titleExpiryTaskId = -1
+        }
+        if (titleBuffRefreshTaskId != -1) {
+            bukkitPlugin.server.scheduler.cancelTask(titleBuffRefreshTaskId)
+            titleBuffRefreshTaskId = -1
         }
     }
 
@@ -55,6 +64,7 @@ object FreeSwitchTitle : Plugin() {
         ConfigMigrationUtils.migrateAll()
         reloadConfigFiles()
         TitleUtils.loadTitleData()
+        refreshOnlineTitleEffects()
     }
 
     private fun reloadConfigFiles() {
@@ -66,6 +76,26 @@ object FreeSwitchTitle : Plugin() {
 
     fun sendConsoleMessage(message: String) {
         bukkitPlugin.server.consoleSender.sendMessage(message)
+    }
+
+    private fun refreshOnlineTitleEffects() {
+        TitlePreviewManager.stopAll()
+        bukkitPlugin.server.onlinePlayers.forEach { player ->
+            TitleBuffManager.clear(player)
+            TitleParticleManager.stop(player)
+            player.getCurrentTitle()?.let { title ->
+                TitleBuffManager.apply(player, title)
+                TitleParticleManager.start(player, title)
+            }
+        }
+    }
+
+    private fun refreshOnlineTitleBuffs() {
+        bukkitPlugin.server.onlinePlayers.forEach { player ->
+            player.getCurrentTitle()
+                ?.takeIf { it.buffEffect.enabled }
+                ?.let { TitleBuffManager.apply(player, it) }
+        }
     }
 
     private fun loadPlayerData() {
@@ -91,6 +121,15 @@ object FreeSwitchTitle : Plugin() {
         }
         titleExpiryTaskId = bukkitPlugin.server.scheduler
             .runTaskTimer(bukkitPlugin, Runnable { TitleUtils.cleanupOnlinePlayers() }, 20L * 60L, 20L * 60L * 10L)
+            .taskId
+    }
+
+    private fun startTitleBuffRefreshTask() {
+        if (titleBuffRefreshTaskId != -1) {
+            bukkitPlugin.server.scheduler.cancelTask(titleBuffRefreshTaskId)
+        }
+        titleBuffRefreshTaskId = bukkitPlugin.server.scheduler
+            .runTaskTimer(bukkitPlugin, Runnable { refreshOnlineTitleBuffs() }, 20L * 60L * 5L, 20L * 60L * 5L)
             .taskId
     }
 }

@@ -19,6 +19,8 @@ data class TitleData(
     val shopEnable: Boolean,
     val shopAvailableFrom: Long?,
     val shopAvailableUntil: Long?,
+    val shopAvailableFromRaw: String,
+    val shopAvailableUntilRaw: String,
     val shopCurrency: CurrencyType,
     val vaultPrice: Double,
     val pointsPrice: Int,

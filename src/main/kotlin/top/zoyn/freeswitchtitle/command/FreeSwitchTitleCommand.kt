@@ -28,6 +28,8 @@ import top.zoyn.freeswitchtitle.util.addTitle
 import top.zoyn.freeswitchtitle.util.openTitleListMenu
 import top.zoyn.freeswitchtitle.util.removeTitle
 import top.zoyn.freeswitchtitle.util.resetCurrentTitle
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.UUID
 
 @CommandHeader(
@@ -395,6 +397,13 @@ object FreeSwitchTitleCommand {
         return runCatching { Attribute.valueOf(name.trim().uppercase()) }.isSuccess
     }
 
+    private fun parseConfigDateTime(raw: String): Long? {
+        if (raw.isBlank()) return null
+        return runCatching {
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).apply { isLenient = false }.parse(raw)?.time
+        }.getOrNull()
+    }
+
     private fun sendValidationReport(sender: CommandSender) {
         val titles = FreeSwitchTitleAPI.getTitleDataList()
         val warnings = mutableListOf<String>()
@@ -416,9 +425,29 @@ object FreeSwitchTitleCommand {
                 if (title.shopPermission.isNotBlank() && title.requiredPermissions.contains(title.shopPermission)) {
                     warnings += "${title.uid}: shop.permission 与 requirements.permissions 存在重复"
                 }
+                val availableFrom = parseConfigDateTime(title.shopAvailableFromRaw)
+                val availableUntil = parseConfigDateTime(title.shopAvailableUntilRaw)
+                if (title.shopAvailableFromRaw.isNotBlank() && availableFrom == null) {
+                    errors += "${title.uid}: shop.available-from 时间格式无效，应为 yyyy-MM-dd HH:mm:ss"
+                }
+                if (title.shopAvailableUntilRaw.isNotBlank() && availableUntil == null) {
+                    errors += "${title.uid}: shop.available-until 时间格式无效，应为 yyyy-MM-dd HH:mm:ss"
+                }
+                if (availableFrom != null && availableUntil != null && availableFrom > availableUntil) {
+                    errors += "${title.uid}: shop.available-from 不能晚于 shop.available-until"
+                }
             }
             title.permissions.filter { it.isBlank() }.forEach { _ -> warnings += "${title.uid}: permission 中存在空权限节点" }
             title.requiredPermissions.filter { it.isBlank() }.forEach { _ -> warnings += "${title.uid}: requirements.permissions 中存在空权限节点" }
+            if (title.particleEffect.preset.isNotBlank() && !ConfigUtils.hasParticlePreset(title.particleEffect.preset)) {
+                errors += "${title.uid}: 粒子预设不存在: ${title.particleEffect.preset}"
+            }
+            if (title.buffEffect.potionPreset.isNotBlank() && !ConfigUtils.hasPotionPreset(title.buffEffect.potionPreset)) {
+                errors += "${title.uid}: 药水效果预设不存在: ${title.buffEffect.potionPreset}"
+            }
+            if (title.buffEffect.attributePreset.isNotBlank() && !ConfigUtils.hasAttributePreset(title.buffEffect.attributePreset)) {
+                errors += "${title.uid}: 属性效果预设不存在: ${title.buffEffect.attributePreset}"
+            }
             if (title.particleEffect.enabled && !isValidParticle(title.particleEffect.particle)) {
                 errors += "${title.uid}: 粒子类型不存在: ${title.particleEffect.particle}"
             }

@@ -1,5 +1,5 @@
 # 配置结构版本，请勿随意修改
-config-version: 1
+config-version: 2
 
 # 数据库配置
 sql:

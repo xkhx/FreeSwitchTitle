@@ -10,6 +10,7 @@ import taboolib.module.configuration.Config
 import taboolib.module.configuration.ConfigFile
 import taboolib.module.metrics.Metrics
 import taboolib.platform.util.bukkitPlugin
+import top.zoyn.freeswitchtitle.util.ConfigMigrationUtils
 import top.zoyn.freeswitchtitle.util.TitleBuffManager
 import top.zoyn.freeswitchtitle.util.TitleParticleManager
 import top.zoyn.freeswitchtitle.util.TitleUtils
@@ -50,11 +51,17 @@ object FreeSwitchTitle : Plugin() {
     }
 
     fun reload() {
+        reloadConfigFiles()
+        ConfigMigrationUtils.migrateAll()
+        reloadConfigFiles()
+        TitleUtils.loadTitleData()
+    }
+
+    private fun reloadConfigFiles() {
         config.reload()
         guiConfig.reload()
         particleConfig.reload()
         effectConfig.reload()
-        TitleUtils.loadTitleData()
     }
 
     fun sendConsoleMessage(message: String) {

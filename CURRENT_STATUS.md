@@ -36,6 +36,7 @@ BUILD SUCCESSFUL
 - 独立 `particles.yml` 粒子预设配置，称号可复用预设
 - 独立 `effects.yml` 药水/属性预设配置，称号可复用增益效果
 - `/fst preview <uid>` 称号粒子预览与商城购买确认 GUI
+- 配置迁移与自动补齐，`config-version` 升级到 2
 
 ## 已完成并推送的功能
 
@@ -388,6 +389,9 @@ plugins/PlaceholderAPI-2.11.6.jar
 - 已新增 `/fst preview <uid>`，可临时预览称号粒子效果，不改变当前称号、不发放权限、不应用药水/属性。
 - 已新增 `preview.enable`、`preview.duration`、`preview.cooldown` 配置，并在退出时自动清理预览。
 - 商城点击称号时可通过 `shop.confirm-purchase` 打开购买确认 GUI，点击确认后才扣费购买，点击取消不会扣费。
+- 已新增配置迁移器，启动和 `/fst reload` 时会自动备份并补齐缺失节点。
+- 自动补齐范围包括 `config.yml` 的预览/确认购买节点、`gui.yml` 的分类/图鉴/确认购买节点、`lang/zh_CN.yml` 的新增语言项，以及缺失的 `particles.yml`、`effects.yml`。
+- 自动补齐只写缺失节点，不覆盖已有配置值。
 
 ## 尚未完成
 

@@ -252,8 +252,11 @@ effects:
 4. 插件生成：
 
    ```text
+   plugins/FreeSwitchTitle/image-mapping.yml
    plugins/FreeSwitchTitle/resourcepack.zip
    ```
+
+   `image-mapping.yml` 会固定图片、字符、height、ascent，方便后续稳定维护。
 
 5. 将资源包配置给服务器或上传到资源包地址。
 

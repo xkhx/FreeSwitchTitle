@@ -510,6 +510,8 @@
 3. 自动图片资源包
    - 已支持 `display.image: vip.png`。
    - 已自动扫描 `plugins/FreeSwitchTitle/images/*.png`。
+   - 已自动生成 `image-mapping.yml` 固定图片与字符映射。
+   - 已支持每张图片单独配置 `height` 与 `ascent`。
    - 已自动生成 `resourcepack/` 与 `resourcepack.zip`。
    - 已自动生成 `assets/minecraft/font/default.json` bitmap provider。
    - 已自动计算并输出 SHA1。
@@ -523,27 +525,21 @@
 
 - 插件目前只生成资源包，不内置 HTTP 服务。
 - 需要服主自行上传资源包或配置 `server.properties`。
-- 自动 glyph 分配按图片文件名排序，新增/删除/重命名图片可能改变映射。
-- 所有图片共用全局 `default-height` 与 `default-ascent`。
+- 若手动重命名图片，需要同步调整 `image-mapping.yml` 中对应条目的 `file`。
+- 修改 `char`、`height`、`ascent` 后需要重新上传/下发新的资源包。
 
 ### 后续增强建议
 
-1. 稳定映射
-   - 新增 `image-mapping.yml`。
-   - 固定每张图片对应的 Unicode 字符。
-   - 避免新增或删除图片导致旧称号错图。
-
-2. 单图字体参数
-   - 支持每张图片独立配置 `height` 与 `ascent`。
-   - 解决不同尺寸图片显示高度不一致的问题。
-
-3. 自动下发资源包
+1. 自动下发资源包
    - 可选内置 HTTP 服务托管 `resourcepack.zip`。
    - 玩家进服时调用 Bukkit API 下发资源包。
    - 配置 `public-url`、`required`、`prompt`。
 
-4. 图片称号预览
+2. 图片称号预览
    - 新增 `/fst previewdisplay <uid>` 或扩展 `/fst preview <uid>` 同时预览图片显示。
+
+3. 更多字体参数
+   - 支持每张图片配置左右间距、默认偏移等更细显示参数。
 
 ### 验收标准
 

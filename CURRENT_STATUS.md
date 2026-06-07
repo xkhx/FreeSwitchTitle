@@ -134,6 +134,8 @@ E:/Minecraft/Server/plugins/FreeSwitchTitle/
 - 自动扫描 `plugins/FreeSwitchTitle/images/*.png`。
 - 自动生成资源包目录与 `resourcepack.zip`。
 - 自动生成字体 bitmap glyph 映射。
+- 自动生成并维护 `image-mapping.yml` 固定图片字符映射。
+- 支持每张图片独立配置 `height` 与 `ascent`。
 - 自动计算并输出资源包 SHA1。
 - 已接入上线、佩戴、切换、卸下、过期、退出、reload、disable 生命周期。
 
@@ -141,7 +143,7 @@ E:/Minecraft/Server/plugins/FreeSwitchTitle/
 
 - 插件只生成资源包 zip，不内置 HTTP 托管。
 - 玩家必须加载资源包才能看到图片称号。
-- 自动 glyph 分配按图片文件名排序，新增/删除图片可能改变映射顺序。
+- 如手动重命名图片，需要同步调整 `image-mapping.yml` 中的 `file`。
 
 ### 图鉴与收藏
 
@@ -207,10 +209,10 @@ E:/Minecraft/Server/plugins/FreeSwitchTitle/
    - 当前只生成 zip，不负责托管和下发。
    - 服主需要自行配置 `server.properties` 或上传到资源包地址。
 
-2. 图片 glyph 映射稳定性
-   - 当前按图片文件名排序分配字符。
-   - 新增/删除/重命名图片可能改变映射。
-   - 后续建议新增 `image-mapping.yml` 固定映射。
+2. 图片 glyph 映射维护
+   - 当前已通过 `image-mapping.yml` 固定映射。
+   - 若服主手动改 `char`，需要重新上传/下发资源包。
+   - 若服主重命名图片，需要同步调整映射中的 `file`。
 
 3. 真实经济/权限插件联动
    - 代码路径已实现，但需要在安装 Vault、PlayerPoints、LuckPerms、GroupManager 的真实环境继续验证。
@@ -232,11 +234,11 @@ E:/Minecraft/Server/plugins/FreeSwitchTitle/
 - 验证图片称号资源包加载。
 - 验证 reload 后在线玩家效果刷新。
 
-### P1：图片称号稳定性增强
+### P1：图片称号体验增强
 
-- 新增 `image-mapping.yml`，固定图片与 Unicode 字符映射。
-- 支持每张图片单独配置 `height` / `ascent`。
 - 可选：内置 HTTP 资源包托管和玩家进服自动下发。
+- 图片称号预览命令。
+- 支持更多单图字体参数，例如左右间距。
 
 ### P2：文档继续细化
 

@@ -183,9 +183,12 @@ fly:
 4. 插件会生成：
 
    ```text
+   plugins/FreeSwitchTitle/image-mapping.yml
    plugins/FreeSwitchTitle/resourcepack/
    plugins/FreeSwitchTitle/resourcepack.zip
    ```
+
+   `image-mapping.yml` 会固定图片与 Unicode 字符映射，后续新增图片不会影响旧图片称号。
 
 5. 将 `resourcepack.zip` 配置为服务器资源包，或上传到资源包地址后配置 `server.properties`。
 

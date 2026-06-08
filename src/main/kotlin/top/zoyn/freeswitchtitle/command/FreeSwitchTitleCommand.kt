@@ -178,6 +178,30 @@ object FreeSwitchTitleCommand {
         }
     }
 
+    @CommandBody(permission = "freeswitchtitle.command.previewdisplay", permissionDefault = PermissionDefault.TRUE, description = "@command-description-previewdisplay")
+    val previewDisplay = subCommand {
+        dynamic("uid") {
+            suggestionUncheck<Player> { _, _ ->
+                FreeSwitchTitleAPI.getTitleUidList()
+            }
+            execute<Player> { sender, context, _ ->
+                val uid = context["uid"]
+                val title = FreeSwitchTitleAPI.getTitle(uid) ?: run {
+                    sender.sendLang("preview-title-not-found")
+                    return@execute
+                }
+                TitlePreviewManager.previewDisplay(sender, title)
+            }
+        }
+    }
+
+    @CommandBody(permission = "freeswitchtitle.command.resourcepack", permissionDefault = PermissionDefault.OP, description = "@command-description-resourcepack")
+    val resourcePack = subCommand {
+        execute<CommandSender> { sender, _, _ ->
+            sendResourcePackStatus(sender)
+        }
+    }
+
     @CommandBody(permission = "freeswitchtitle.command.look", permissionDefault = PermissionDefault.TRUE, description = "@command-description-look")
     val look = subCommand {
         player("player") {
@@ -320,6 +344,17 @@ object FreeSwitchTitleCommand {
                 }
             }
         }
+    }
+
+    private fun sendResourcePackStatus(sender: CommandSender) {
+        sender.sendLang("resourcepack-header")
+        sender.sendLang("resourcepack-line-image-folder", TitleImageFontManager.getImageFolder().absolutePath)
+        sender.sendLang("resourcepack-line-mapping-file", TitleImageFontManager.getMappingFile().absolutePath)
+        sender.sendLang("resourcepack-line-output-folder", TitleImageFontManager.getResourcePackFolder().absolutePath)
+        sender.sendLang("resourcepack-line-zip", TitleImageFontManager.getResourcePackZip().absolutePath)
+        sender.sendLang("resourcepack-line-sha1", TitleImageFontManager.getLastSha1().ifBlank { "未生成" })
+        sender.sendLang("resourcepack-line-image-count", TitleImageFontManager.getImageCount())
+        sender.sendLang("resourcepack-footer")
     }
 
     private fun sendTitleList(sender: CommandSender, category: String) {

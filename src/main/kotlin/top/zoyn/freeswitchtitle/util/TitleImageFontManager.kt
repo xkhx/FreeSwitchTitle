@@ -92,6 +92,12 @@ object TitleImageFontManager {
 
     fun getMappingFile(): File = mappingFile()
 
+    fun getResourcePackFolder(): File = outputFolder()
+
+    fun getResourcePackZip(): File = outputZip()
+
+    fun getImageCount(): Int = imageFiles.size
+
     fun getLastSha1(): String = lastSha1
 
     private fun imageFolder(): File {

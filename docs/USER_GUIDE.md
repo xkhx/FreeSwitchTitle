@@ -382,6 +382,18 @@ collection:
 /fst validate
 ```
 
+### 预览图片称号
+
+```text
+/fst previewdisplay fly
+```
+
+### 查看资源包状态
+
+```text
+/fst resourcepack
+```
+
 ### 重载
 
 ```text
@@ -448,6 +460,8 @@ permission:
 - `/fst set <player> <uid>`
 - `/fst reset`
 - `/fst validate`
+- `/fst previewdisplay <uid>`
+- `/fst resourcepack`
 - 限时称号过期
 - 图片称号资源包加载
 - 粒子/药水/属性清理

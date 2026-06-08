@@ -84,6 +84,8 @@ FreeSwitchTitle 是一个基于 TabooLib 的 Bukkit / Spigot 称号插件，面�
 | `/fst renew <uid>` | `freeswitchtitle.command.renew` | 续费限时称号 |
 | `/fst buy <uid>` | `freeswitchtitle.command.buy` | 直接购买或领取称号 |
 | `/fst preview <uid>` | `freeswitchtitle.command.preview` | 预览称号粒子效果 |
+| `/fst previewdisplay <uid>` | `freeswitchtitle.command.previewdisplay` | 预览称号头顶图片显示 |
+| `/fst resourcepack` | `freeswitchtitle.command.resourcepack` | 查看图片称号资源包状态 |
 | `/fst look <player> [category]` | `freeswitchtitle.command.look` | 查看其他玩家称号 |
 | `/fst list [category]` | `freeswitchtitle.command.list` | 查看全部称号 |
 | `/fst show <uid>` | `freeswitchtitle.command.show` | 查看指定称号详情 |
@@ -190,7 +192,11 @@ fly:
 
    `image-mapping.yml` 会固定图片与 Unicode 字符映射，后续新增图片不会影响旧图片称号。
 
-5. 将 `resourcepack.zip` 配置为服务器资源包，或上传到资源包地址后配置 `server.properties`。
+5. 可用 `/fst resourcepack` 查看资源包路径、SHA1、图片数量和映射文件路径。
+
+6. 将 `resourcepack.zip` 配置为服务器资源包，或上传到资源包地址后配置 `server.properties`。
+
+可以用 `/fst previewdisplay <uid>` 临时预览某个称号的头顶图片显示，便于调试高度和缩放。
 
 注意：插件当前只生成资源包，不自动开 HTTP 服务下发资源包。玩家必须加载该资源包才能看到图片，否则会看到占位字符。
 

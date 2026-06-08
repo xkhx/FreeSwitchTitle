@@ -19,13 +19,59 @@ object TitleDisplayManager {
     )
 
     private val displays = mutableMapOf<UUID, DisplayState>()
+    private val previewDisplays = mutableMapOf<UUID, DisplayState>()
 
     fun start(player: Player, title: TitleData) {
         stop(player.uniqueId)
         val effect = title.displayEffect
         if (!effect.enabled || effect.text.isBlank()) return
+        val entity = spawnDisplay(player, title)
+        val task = bukkitPlugin.server.scheduler.runTaskTimer(
+            bukkitPlugin,
+            Runnable {
+                if (!player.isOnline || TitleUtils.getUsing(player.uniqueId) != title.uid || entity.isDead) {
+                    stop(player.uniqueId)
+                    return@Runnable
+                }
+                teleportDisplay(player, title, entity, stop = { stop(player.uniqueId) })
+            },
+            ConfigUtils.displayUpdateIntervalTicks,
+            ConfigUtils.displayUpdateIntervalTicks
+        )
+        displays[player.uniqueId] = DisplayState(title.uid, entity, task)
+    }
+
+    fun startPreview(player: Player, title: TitleData, durationTicks: Long, onEnd: () -> Unit = {}): Boolean {
+        stopPreview(player.uniqueId)
+        val effect = title.displayEffect
+        if (!effect.enabled || effect.text.isBlank()) return false
+        val entity = spawnDisplay(player, title)
+        var remain = durationTicks.coerceAtLeast(1L)
+        val task = bukkitPlugin.server.scheduler.runTaskTimer(
+            bukkitPlugin,
+            Runnable {
+                if (!player.isOnline || remain <= 0L || entity.isDead) {
+                    stopPreview(player.uniqueId)
+                    onEnd()
+                    return@Runnable
+                }
+                remain -= ConfigUtils.displayUpdateIntervalTicks
+                teleportDisplay(player, title, entity, stop = {
+                    stopPreview(player.uniqueId)
+                    onEnd()
+                })
+            },
+            ConfigUtils.displayUpdateIntervalTicks,
+            ConfigUtils.displayUpdateIntervalTicks
+        )
+        previewDisplays[player.uniqueId] = DisplayState(title.uid, entity, task)
+        return true
+    }
+
+    private fun spawnDisplay(player: Player, title: TitleData): TextDisplay {
+        val effect = title.displayEffect
         val location = player.location.add(0.0, effect.yOffset, 0.0)
-        val entity = player.world.spawn(location, TextDisplay::class.java) { display ->
+        return player.world.spawn(location, TextDisplay::class.java) { display ->
             display.text = effect.text.colored()
             display.billboard = Display.Billboard.CENTER
             display.isShadowed = effect.shadow
@@ -35,24 +81,15 @@ object TitleDisplayManager {
             display.isInvulnerable = true
             applyScale(display, effect.scale)
         }
-        val task = bukkitPlugin.server.scheduler.runTaskTimer(
-            bukkitPlugin,
-            Runnable {
-                if (!player.isOnline || TitleUtils.getUsing(player.uniqueId) != title.uid || entity.isDead) {
-                    stop(player.uniqueId)
-                    return@Runnable
-                }
-                runCatching {
-                    entity.teleport(player.location.add(0.0, effect.yOffset, 0.0))
-                }.getOrElse {
-                    FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 更新图片称号显示失败: ${player.name} - ${it.message}")
-                    stop(player.uniqueId)
-                }
-            },
-            ConfigUtils.displayUpdateIntervalTicks,
-            ConfigUtils.displayUpdateIntervalTicks
-        )
-        displays[player.uniqueId] = DisplayState(title.uid, entity, task)
+    }
+
+    private fun teleportDisplay(player: Player, title: TitleData, entity: TextDisplay, stop: () -> Unit) {
+        runCatching {
+            entity.teleport(player.location.add(0.0, title.displayEffect.yOffset, 0.0))
+        }.getOrElse {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 更新图片称号显示失败: ${player.name} - ${it.message}")
+            stop()
+        }
     }
 
     private fun applyScale(display: TextDisplay, scale: Float) {
@@ -102,8 +139,27 @@ object TitleDisplayManager {
         }
     }
 
+    fun stopPreview(player: Player) {
+        stopPreview(player.uniqueId)
+    }
+
+    fun stopPreview(uuid: UUID) {
+        previewDisplays.remove(uuid)?.let { state ->
+            state.task.cancel()
+            if (!state.entity.isDead) {
+                state.entity.remove()
+            }
+        }
+    }
+
+    fun stopAllPreview() {
+        previewDisplays.keys.toList().forEach { stopPreview(it) }
+        previewDisplays.clear()
+    }
+
     fun stopAll() {
         displays.keys.toList().forEach { stop(it) }
         displays.clear()
+        stopAllPreview()
     }
 }

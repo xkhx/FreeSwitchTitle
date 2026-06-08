@@ -270,6 +270,13 @@ images:
 
 ### 8.1 玩家看不到图片
 
+可以先执行：
+
+```text
+/fst resourcepack
+/fst previewdisplay <uid>
+```
+
 检查：
 
 1. 玩家是否接受了服务器资源包。

@@ -77,11 +77,11 @@ object TitleBuffManager {
     }
 
     private fun parsePotion(name: String): PotionEffectType? {
-        return PotionEffectType.getByName(name.trim().uppercase(Locale.getDefault()))
+        return PotionEffectType.getByName(name.trim().uppercase(Locale.ROOT))
     }
 
     private fun parseAttribute(name: String): Attribute? {
-        return runCatching { Attribute.valueOf(name.trim().uppercase(Locale.getDefault())) }.getOrNull()
+        return runCatching { Attribute.valueOf(name.trim().uppercase(Locale.ROOT)) }.getOrNull()
     }
 
     private fun modifierId(uuid: UUID, key: String): UUID {

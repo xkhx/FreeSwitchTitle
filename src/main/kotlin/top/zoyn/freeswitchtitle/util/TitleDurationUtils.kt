@@ -8,7 +8,7 @@ object TitleDurationUtils {
     private val durationRegex = Regex("^(\\d+)(ms|s|m|h|d)?$")
 
     fun parse(text: String?): Long {
-        val raw = text?.trim()?.lowercase(Locale.getDefault()).orEmpty()
+        val raw = text?.trim()?.lowercase(Locale.ROOT).orEmpty()
         if (raw.isBlank() || raw == "0" || raw == "permanent" || raw == "forever" || raw == "永久") {
             return 0L
         }

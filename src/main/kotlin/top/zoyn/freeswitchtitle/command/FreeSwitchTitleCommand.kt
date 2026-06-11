@@ -347,13 +347,25 @@ object FreeSwitchTitleCommand {
     }
 
     private fun sendResourcePackStatus(sender: CommandSender) {
+        val zip = TitleImageFontManager.getResourcePackZip()
         sender.sendLang("resourcepack-header")
+        sender.sendLang("resourcepack-line-enabled", if (ConfigUtils.displayResourcePackEnable) "是" else "否")
         sender.sendLang("resourcepack-line-image-folder", TitleImageFontManager.getImageFolder().absolutePath)
         sender.sendLang("resourcepack-line-mapping-file", TitleImageFontManager.getMappingFile().absolutePath)
         sender.sendLang("resourcepack-line-output-folder", TitleImageFontManager.getResourcePackFolder().absolutePath)
-        sender.sendLang("resourcepack-line-zip", TitleImageFontManager.getResourcePackZip().absolutePath)
+        sender.sendLang("resourcepack-line-namespace", ConfigUtils.displayResourcePackNamespace)
+        sender.sendLang("resourcepack-line-pack-format", ConfigUtils.displayResourcePackFormat)
+        sender.sendLang("resourcepack-line-zip", zip.absolutePath, if (zip.exists()) "存在" else "不存在")
         sender.sendLang("resourcepack-line-sha1", TitleImageFontManager.getLastSha1().ifBlank { "未生成" })
         sender.sendLang("resourcepack-line-image-count", TitleImageFontManager.getImageCount())
+        if (TitleImageFontManager.getImageCount() <= 0) {
+            sender.sendLang("resourcepack-line-empty")
+        }
+        TitleImageFontManager.getUnsafeOutputWarning().takeIf { it.isNotBlank() }?.let {
+            sender.sendLang("resourcepack-line-warning", it)
+        }
+        sender.sendLang("resourcepack-line-server-url")
+        sender.sendLang("resourcepack-line-server-sha1", TitleImageFontManager.getLastSha1().ifBlank { "<sha1>" })
         sender.sendLang("resourcepack-footer")
     }
 
@@ -393,6 +405,7 @@ object FreeSwitchTitleCommand {
         sender.sendLang("show-title-line-requirements", title.requiredPermissions.joinToString(", ").ifBlank { "无" })
         sender.sendLang("show-title-line-particle", formatParticle(title))
         sender.sendLang("show-title-line-buff", formatBuff(title))
+        sender.sendLang("show-title-line-display", formatDisplay(title))
         sender.sendLang("show-title-line-actions", title.equipActions.size, title.unequipActions.size, title.buyActions.size, title.expireActions.size)
         sender.sendLang("show-title-footer")
     }
@@ -419,6 +432,20 @@ object FreeSwitchTitleCommand {
         val potion = effect.potionPreset.ifBlank { if (effect.potions.isNotEmpty()) "内联药水" else "" }
         val attribute = effect.attributePreset.ifBlank { if (effect.attributes.isNotEmpty()) "内联属性" else "" }
         return listOf(potion, attribute).filter { it.isNotBlank() }.joinToString(" / ")
+    }
+
+    private fun formatDisplay(title: TitleData): String {
+        val effect = title.displayEffect
+        if (!effect.enabled) return "无"
+        val source = when {
+            effect.image.isNotBlank() && effect.text.isNotBlank() -> "图片 ${effect.image}"
+            effect.image.isNotBlank() -> "图片 ${effect.image}（未解析到字符）"
+            effect.text.isNotBlank() -> "手动字符"
+            else -> "已启用但无内容"
+        }
+        val shadow = if (effect.shadow) "是" else "否"
+        val seeThrough = if (effect.seeThrough) "是" else "否"
+        return "$source / y=${effect.yOffset} / scale=${effect.scale} / shadow=$shadow / see-through=$seeThrough"
     }
 
     private fun isValidParticle(name: String): Boolean {
@@ -482,8 +509,18 @@ object FreeSwitchTitleCommand {
                 if (title.displayEffect.image.isNotBlank()) {
                     if (!TitleImageFontManager.isValidImageName(title.displayEffect.image)) {
                         errors += "${title.uid}: display.image 文件名非法，仅允许 png 文件名包含字母、数字、_、-、."
+                    } else if (!ConfigUtils.displayResourcePackEnable) {
+                        if (title.displayEffect.text.isBlank()) {
+                            errors += "${title.uid}: 自动资源包已关闭，display.image 不会生效，请配置 display.text 手动字符"
+                        } else {
+                            warnings += "${title.uid}: 自动资源包已关闭，display.image 将被忽略并使用 display.text 回退"
+                        }
                     } else if (!TitleImageFontManager.hasImage(title.displayEffect.image)) {
-                        errors += "${title.uid}: display.image 图片不存在: ${title.displayEffect.image}，请放入 ${TitleImageFontManager.getImageFolder().absolutePath}"
+                        if (title.displayEffect.text.isBlank()) {
+                            errors += "${title.uid}: display.image 图片不存在: ${title.displayEffect.image}，请放入 ${TitleImageFontManager.getImageFolder().absolutePath} 或配置 display.text 回退"
+                        } else {
+                            warnings += "${title.uid}: display.image 图片不存在: ${title.displayEffect.image}，将使用 display.text 回退"
+                        }
                     }
                 }
                 if (title.displayEffect.scale <= 0.0f) {

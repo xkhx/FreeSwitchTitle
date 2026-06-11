@@ -14,7 +14,7 @@ enum class TitleRarity(
 
     companion object {
         fun match(value: String?): TitleRarity {
-            val raw = value?.trim()?.uppercase(Locale.getDefault()).orEmpty()
+            val raw = value?.trim()?.uppercase(Locale.ROOT).orEmpty()
             return entries.firstOrNull { it.name == raw } ?: COMMON
         }
     }

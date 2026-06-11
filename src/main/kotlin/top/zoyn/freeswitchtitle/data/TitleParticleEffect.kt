@@ -28,7 +28,7 @@ enum class TitleParticleShape {
 
     companion object {
         fun match(value: String?): TitleParticleShape {
-            val raw = value?.trim()?.uppercase(Locale.getDefault()).orEmpty()
+            val raw = value?.trim()?.uppercase(Locale.ROOT).orEmpty()
             return entries.firstOrNull { it.name == raw } ?: HALO
         }
     }

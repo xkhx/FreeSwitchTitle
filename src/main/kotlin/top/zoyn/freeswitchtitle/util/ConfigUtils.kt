@@ -80,6 +80,9 @@ object ConfigUtils {
     val displayResourcePackNamespace: String
         get() = FreeSwitchTitle.config.getString("display.resource-pack.namespace") ?: "freeswitchtitle"
 
+    val displayResourcePackFormat: Int
+        get() = FreeSwitchTitle.config.getInt("display.resource-pack.pack-format", 22).coerceAtLeast(1)
+
     val displayResourcePackStartCodepoint: Int
         get() = parseCodepoint(FreeSwitchTitle.config.getString("display.resource-pack.start-codepoint") ?: "0xE001")
 
@@ -328,19 +331,28 @@ object ConfigUtils {
         return XMaterial.matchXMaterial(type).getOrNull() ?: error("Material $type not found")
     }
 
-    private fun decodeUnicodeEscapes(text: String): String {
-        return Regex("\\\\u([0-9a-fA-F]{4})").replace(text) { match ->
+    fun parseGlyphText(text: String): String {
+        val value = text.trim().removeSurrounding("'").removeSurrounding("\"")
+        if (value.isBlank()) return ""
+        parseCodepointOrNull(value)?.let { return String(Character.toChars(it)) }
+        return Regex("\\\\u([0-9a-fA-F]{4})").replace(value) { match ->
             match.groupValues[1].toInt(16).toChar().toString()
         }
     }
 
     private fun parseCodepoint(raw: String): Int {
-        val value = raw.trim()
+        return parseCodepointOrNull(raw) ?: 0xE001
+    }
+
+    private fun parseCodepointOrNull(raw: String): Int? {
+        val value = raw.trim().removeSurrounding("'").removeSurrounding("\"")
         return when {
+            value.startsWith("\\u", ignoreCase = true) && value.length == 6 -> value.substring(2).toIntOrNull(16)
             value.startsWith("0x", ignoreCase = true) -> value.substring(2).toIntOrNull(16)
             value.startsWith("U+", ignoreCase = true) -> value.substring(2).toIntOrNull(16)
+            value.codePointCount(0, value.length) == 1 -> value.codePointAt(0)
             else -> value.toIntOrNull()
-        } ?: 0xE001
+        }
     }
 
     fun getTitleMaterial(uid: String): XMaterial {
@@ -494,7 +506,7 @@ object ConfigUtils {
         val image = titleConfig.getString("$path.image")?.trim().orEmpty()
         val text = image.takeIf { it.isNotBlank() }
             ?.let { TitleImageFontManager.getGlyph(it) }
-            ?: decodeUnicodeEscapes(titleConfig.getString("$path.text")?.trim().orEmpty())
+            ?: parseGlyphText(titleConfig.getString("$path.text")?.trim().orEmpty())
         return TitleDisplayEffect(
             enabled = true,
             text = text,

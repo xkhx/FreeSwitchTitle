@@ -12,7 +12,7 @@ import java.util.Locale
 
 object ConfigMigrationUtils {
 
-    private const val CURRENT_CONFIG_VERSION = 2
+    private const val CURRENT_CONFIG_VERSION = 3
     private val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT)
 
     fun migrateAll() {
@@ -40,6 +40,7 @@ object ConfigMigrationUtils {
         changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.image-folder", "images") || changed
         changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.output-folder", "resourcepack") || changed
         changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.namespace", "freeswitchtitle") || changed
+        changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.pack-format", 22) || changed
         changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.start-codepoint", "0xE001") || changed
         changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.default-height", 16) || changed
         changed = setIfMissing(FreeSwitchTitle.config, "display.resource-pack.default-ascent", 8) || changed
@@ -96,6 +97,7 @@ object ConfigMigrationUtils {
             "command-description-resourcepack" to "查看图片称号资源包状态",
             "show-title-line-particle" to "&7粒子效果: &f{0}",
             "show-title-line-buff" to "&7增益效果: &f{0}",
+            "show-title-line-display" to "&7头顶图片: &f{0}",
             "preview-start" to "&a正在预览称号 &f{0}&a，持续 &f{1}&a。",
             "preview-end" to "&7称号预览已结束。",
             "preview-disabled" to "&c称号预览功能未启用。",
@@ -107,12 +109,19 @@ object ConfigMigrationUtils {
             "preview-display-no-effect" to "&e称号 &f{0} &e没有可预览的头顶图片显示。",
             "preview-display-resource-pack-tip" to "&7如果你看到的是方块或乱码，请确认客户端已加载最新图片称号资源包。",
             "resourcepack-header" to "&8&m                  &r &b图片称号资源包状态 &8&m                  ",
+            "resourcepack-line-enabled" to "&7自动资源包: &f{0}",
             "resourcepack-line-image-folder" to "&7图片目录: &f{0}",
             "resourcepack-line-mapping-file" to "&7映射文件: &f{0}",
             "resourcepack-line-output-folder" to "&7输出目录: &f{0}",
-            "resourcepack-line-zip" to "&7资源包 ZIP: &f{0}",
+            "resourcepack-line-namespace" to "&7命名空间: &f{0}",
+            "resourcepack-line-pack-format" to "&7pack_format: &f{0}",
+            "resourcepack-line-zip" to "&7资源包 ZIP: &f{0} &8({1})",
             "resourcepack-line-sha1" to "&7SHA1: &f{0}",
             "resourcepack-line-image-count" to "&7图片数量: &f{0}",
+            "resourcepack-line-empty" to "&e当前没有可用图片，资源包不会提供任何图片 glyph。",
+            "resourcepack-line-warning" to "&e警告: &f{0}",
+            "resourcepack-line-server-url" to "&7server.properties: &fresource-pack=<你的资源包直链 URL>",
+            "resourcepack-line-server-sha1" to "&7server.properties: &fresource-pack-sha1={0}",
             "resourcepack-footer" to "&8&m                                                     ",
             "purchase-confirm-cancelled" to "&7已取消购买。",
             "collection-title-locked" to "&e该称号尚未解锁。",

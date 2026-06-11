@@ -34,7 +34,7 @@ enum class TitleAttributeOperation(val bukkitOperation: AttributeModifier.Operat
 
     companion object {
         fun match(value: String?): TitleAttributeOperation {
-            val raw = value?.trim()?.uppercase(Locale.getDefault()).orEmpty()
+            val raw = value?.trim()?.uppercase(Locale.ROOT).orEmpty()
             return entries.firstOrNull { it.name == raw } ?: ADD_NUMBER
         }
     }

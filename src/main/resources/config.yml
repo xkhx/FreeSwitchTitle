@@ -1,5 +1,5 @@
 # 配置结构版本，请勿随意修改
-config-version: 2
+config-version: 3
 
 # 数据库配置
 sql:
@@ -58,6 +58,8 @@ display:
     output-folder: resourcepack
     # 资源包命名空间
     namespace: freeswitchtitle
+    # 资源包 pack_format，默认适配 Minecraft 1.20.4
+    pack-format: 22
     # 自动分配字符的起始码位，使用私有区避免冲突
     start-codepoint: '0xE001'
     # 字体图片默认高度与基线

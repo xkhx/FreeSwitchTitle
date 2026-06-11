@@ -54,7 +54,7 @@ object TitleEffectUtils {
             index++
             if (raw.isBlank()) continue
             val match = actionRegex.matchEntire(raw)
-            val type = match?.groupValues?.get(1)?.lowercase(Locale.getDefault()) ?: "console"
+            val type = match?.groupValues?.get(1)?.lowercase(Locale.ROOT) ?: "console"
             val content = match?.groupValues?.get(2) ?: raw
             if (content.isBlank()) continue
             if (type == "delay") {
@@ -78,7 +78,7 @@ object TitleEffectUtils {
     }
 
     private fun parseDelayTicks(content: String): Long {
-        val raw = content.trim().lowercase(Locale.getDefault())
+        val raw = content.trim().lowercase(Locale.ROOT)
         val match = delayRegex.matchEntire(raw) ?: return 0L
         val amount = match.groupValues[1].toLongOrNull() ?: return 0L
         return when (match.groupValues[2].ifBlank { "t" }) {

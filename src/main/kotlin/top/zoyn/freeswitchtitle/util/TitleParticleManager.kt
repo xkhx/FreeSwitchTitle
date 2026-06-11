@@ -108,7 +108,7 @@ object TitleParticleManager {
     }
 
     private fun parseParticle(name: String): Particle? {
-        return runCatching { Particle.valueOf(name.trim().uppercase(Locale.getDefault())) }.getOrNull()
+        return runCatching { Particle.valueOf(name.trim().uppercase(Locale.ROOT)) }.getOrNull()
     }
 
     private fun spawn(player: Player, effect: TitleParticleEffect, particle: Particle, tick: Int) {

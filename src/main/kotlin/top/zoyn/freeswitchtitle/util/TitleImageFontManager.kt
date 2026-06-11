@@ -31,12 +31,14 @@ object TitleImageFontManager {
     private val imageFiles = linkedMapOf<String, File>()
     private val imageOptions = linkedMapOf<String, ImageFontOptions>()
     private var lastSha1 = ""
+    private var unsafeOutputWarning = ""
 
     fun reload() {
         imageGlyphs.clear()
         imageFiles.clear()
         imageOptions.clear()
         lastSha1 = ""
+        unsafeOutputWarning = ""
         if (!ConfigUtils.displayResourcePackEnable) return
         val imageFolder = imageFolder()
         if (!imageFolder.exists()) {
@@ -44,11 +46,14 @@ object TitleImageFontManager {
             FreeSwitchTitle.sendConsoleMessage("§a[FreeSwitchTitle] 已生成图片称号目录: ${imageFolder.absolutePath}")
         }
         val images = imageFolder.listFiles { file -> file.isFile && file.extension.equals("png", ignoreCase = true) }
-            ?.sortedBy { it.name.lowercase(Locale.getDefault()) }
+            ?.sortedBy { it.name.lowercase(Locale.ROOT) }
             .orEmpty()
         val validImages = images.filter { isValidImageName(it.name) }
         images.filterNot { isValidImageName(it.name) }.forEach {
             FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 跳过非法图片文件名: ${it.name}，仅允许字母、数字、_、-、. 且必须为 png")
+        }
+        if (validImages.isEmpty()) {
+            FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] 图片称号目录中没有可用 PNG，生成的资源包不会包含图片 glyph")
         }
         val mappingFile = mappingFile()
         val mappingConfig = loadMappingConfig(mappingFile)
@@ -100,16 +105,30 @@ object TitleImageFontManager {
 
     fun getLastSha1(): String = lastSha1
 
+    fun getUnsafeOutputWarning(): String = unsafeOutputWarning
+
     private fun imageFolder(): File {
         return File(getDataFolder(), ConfigUtils.displayImageFolder)
     }
 
     private fun outputFolder(): File {
-        return File(getDataFolder(), ConfigUtils.displayResourcePackOutputFolder)
+        return safeOutputFolder()
     }
 
     private fun outputZip(): File {
-        return File(getDataFolder(), "${ConfigUtils.displayResourcePackOutputFolder}.zip")
+        return File(safeOutputFolder().parentFile, "${safeOutputFolder().name}.zip")
+    }
+
+    private fun safeOutputFolder(): File {
+        val dataFolder = getDataFolder().canonicalFile
+        val raw = ConfigUtils.displayResourcePackOutputFolder.trim()
+        val configured = File(dataFolder, raw.ifBlank { "resourcepack" }).canonicalFile
+        val safe = configured.path.startsWith(dataFolder.path + File.separator) && configured != dataFolder
+        if (safe) return configured
+        val fallback = File(dataFolder, "resourcepack").canonicalFile
+        unsafeOutputWarning = "display.resource-pack.output-folder=$raw 不安全，已回退到 ${fallback.absolutePath}"
+        FreeSwitchTitle.sendConsoleMessage("§e[FreeSwitchTitle] $unsafeOutputWarning")
+        return fallback
     }
 
     private fun mappingFile(): File {
@@ -161,7 +180,7 @@ object TitleImageFontManager {
 
     private fun uniqueMappingId(imageName: String, config: Configuration): String {
         val base = imageName.substringBeforeLast('.')
-            .lowercase(Locale.getDefault())
+            .lowercase(Locale.ROOT)
             .replace(Regex("[^a-z0-9_-]"), "_")
             .ifBlank { "image" }
         var id = base
@@ -209,7 +228,7 @@ object TitleImageFontManager {
     }
 
     private fun normalizeImageName(image: String): String {
-        return image.trim().replace('\\', '/').substringAfterLast('/').lowercase(Locale.getDefault())
+        return image.trim().replace('\\', '/').substringAfterLast('/').lowercase(Locale.ROOT)
     }
 
     private fun generateResourcePack(images: List<File>) {
@@ -232,7 +251,7 @@ object TitleImageFontManager {
     }
 
     private fun sanitizeNamespace(raw: String): String {
-        val namespace = raw.trim().lowercase(Locale.getDefault()).replace(Regex("[^a-z0-9_.-]"), "_")
+        val namespace = raw.trim().lowercase(Locale.ROOT).replace(Regex("[^a-z0-9_.-]"), "_")
         return namespace.ifBlank { "freeswitchtitle" }
     }
 
@@ -243,7 +262,7 @@ object TitleImageFontManager {
             """
             {
               "pack": {
-                "pack_format": 22,
+                "pack_format": ${ConfigUtils.displayResourcePackFormat},
                 "description": "FreeSwitchTitle image title resource pack"
               }
             }
